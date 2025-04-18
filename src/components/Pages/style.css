@@ -1,0 +1,193 @@
+/* Importação das fontes */
+@import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Caveat:wght@400;500&family=Dancing+Script:wght@400;500&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500&family=Playfair+Display:ital@0;1&family=Quicksand:wght@400;500&family=Roboto+Slab:wght@400;500&display=swap');
+
+/* Estilos gerais */
+.bio-content {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Estilo base para todos os parágrafos */
+.bio-paragraph {
+  margin-bottom: 2rem;
+  padding: 0 1.5rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Animação para entrada dos parágrafos */
+@keyframes textFlowIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+    filter: blur(10px);
+  }
+  50% {
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Estilos específicos para cada parágrafo com fontes diferentes */
+.bio-paragraph-1 {
+  font-family: 'Roboto Slab', serif !important;
+  font-size: 1.2rem !important;
+  line-height: 1.8 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.bio-paragraph-2 {
+  font-family: 'Merriweather', serif !important;
+  font-size: 1.2rem !important;
+  line-height: 1.8 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+.bio-paragraph-3 {
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.6rem !important;
+  line-height: 1.5 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 0.8s;
+  opacity: 0;
+}
+
+.bio-paragraph-4 {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: 1.2rem !important;
+  font-weight: 500 !important;
+  line-height: 1.8 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 1.1s;
+  opacity: 0;
+}
+
+.bio-paragraph-5 {
+  font-family: 'Playfair Display', serif !important;
+  font-size: 1.2rem !important;
+  font-style: italic !important;
+  line-height: 1.8 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 1.4s;
+  opacity: 0;
+}
+
+.bio-paragraph-6 {
+  font-family: 'Quicksand', sans-serif !important;
+  font-size: 1.2rem !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.8 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 1.7s;
+  opacity: 0;
+}
+
+.bio-paragraph-7 {
+  font-family: 'Dancing Script', cursive !important;
+  font-size: 1.6rem !important;
+  line-height: 1.5 !important;
+  animation: textFlowIn 0.8s ease forwards;
+  animation-delay: 2s;
+  opacity: 0;
+}
+
+/* Estilo para o título principal */
+.main-title {
+  font-family: 'Abril Fatface', serif !important;
+  font-size: 2.5rem !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0.2px !important;
+  width: 100% !important;
+  padding: 0 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Estilos para termos técnicos */
+.tech-term {
+  position: relative;
+  display: inline-block;
+  padding: 0 6px;
+  margin: 0 3px;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tech-term:hover {
+  transform: translateY(-2px);
+}
+
+/* Tooltip de tecnologia */
+.tech-tooltip {
+  position: absolute;
+  z-index: 1000;
+  width: 250px;
+  padding: 1rem;
+  border-radius: 6px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Animação para o tooltip */
+@keyframes glitchIn {
+  0% { 
+    clip-path: inset(100% 0 0 0);
+    transform: translateX(-50%) scale(0.95);
+    opacity: 0;
+  }
+  5% { 
+    clip-path: inset(40% 0 50% 0);
+    transform: translateX(-52%) scale(0.97);
+    opacity: 0.4;
+  }
+  10% { 
+    clip-path: inset(20% 0 60% 0);
+    transform: translateX(-48%) scale(0.99);
+    opacity: 0.6;
+  }
+  15% { 
+    clip-path: inset(80% 0 5% 0);
+    transform: translateX(-51%) scale(0.98);
+    opacity: 0.8;
+  }
+  20% { 
+    clip-path: inset(43% 0 40% 0);
+    transform: translateX(-49%) scale(1.01);
+    opacity: 0.7;
+  }
+  25% { 
+    clip-path: inset(25% 0 58% 0);
+    transform: translateX(-50%) scale(1);
+    opacity: 0.9;
+  }
+  30% { 
+    clip-path: inset(10% 0 70% 0);
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    clip-path: inset(0 0 0 0);
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  100% { 
+    clip-path: inset(0 0 0 0);
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.glitch-in {
+  animation: glitchIn 0.3s forwards;
+}

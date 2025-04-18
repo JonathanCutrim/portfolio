@@ -1,0 +1,182 @@
+@media (min-width: 1024px) {
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  
+  .project-card {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 639px) {
+  .projects-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.cyberpunk-glow {
+  text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+}
+
+.cyberpunk-border {
+  box-shadow: 0 0 10px #ff00ff;
+}
+
+/* Estilos adicionais para efeito VHS/CRT */
+@keyframes vhs-noise {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.02; }
+}
+
+.vhs-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    transparent 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: vhs-noise 5s infinite;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.97; }
+  5% { opacity: 0.9; }
+  10% { opacity: 0.97; }
+  15% { opacity: 0.94; }
+  20% { opacity: 0.98; }
+  70% { opacity: 0.98; }
+  80% { opacity: 0.94; }
+  85% { opacity: 0.98; }
+  90% { opacity: 0.95; }
+  100% { opacity: 0.98; }
+}
+
+/* Add these styles to your global CSS or Portfolio.js style section */
+
+/* Ensure consistent terminal font styling across the application */
+.terminal-font {
+font-family: 'VT323', 'Courier New', monospace !important;
+letter-spacing: 0.5px;
+}
+
+/* Terminal scanlines effect - consistent across terminals */
+.terminal-scanlines {
+position: relative;
+overflow: hidden;
+}
+
+.terminal-scanlines::before {
+content: "";
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+pointer-events: none;
+background: repeating-linear-gradient(
+0deg,
+rgba(255, 255, 255, 0.05),
+rgba(255, 255, 255, 0.05) 1px,
+transparent 1px,
+transparent 2px
+);
+z-index: 10;
+}
+
+/* Terminal flicker animation */
+@keyframes terminal-flicker {
+0% { opacity: 0.97; }
+5% { opacity: 0.9; }
+10% { opacity: 0.97; }
+15% { opacity: 0.94; }
+20% { opacity: 0.98; }
+70% { opacity: 0.98; }
+80% { opacity: 0.94; }
+85% { opacity: 0.98; }
+90% { opacity: 0.95; }
+100% { opacity: 0.98; }
+}
+
+.terminal-flicker {
+  animation: terminal-flicker 5s infinite;
+      text-align: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+
+
+/* Terminal Styles to Fix Z-Index Issues */
+
+/* Override any sidebar z-index to make sure they stay behind terminals */
+.sidebar, .sidebar-menu, .sidebar-content {
+  z-index: 40 !important;
+}
+
+/* Ensure terminals are always on top */
+.terminal-container {
+  z-index: 9999 !important;
+}
+
+/* Make resize handles more visible with subtle styling */
+.resize-handle {
+  opacity: 0.2;
+  transition: opacity 0.2s ease;
+}
+
+.resize-handle:hover {
+  opacity: 0.5;
+}
+
+/* Add a terminal overlay class that sits on top of everything */
+.terminal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* Terminal glow effect for focused terminals */
+.terminal-active {
+  box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+}
+
+/* Customize terminal scrollbars for better UX */
+.terminal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-content::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.terminal-content::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+.terminal-content::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
