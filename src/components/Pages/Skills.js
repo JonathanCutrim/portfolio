@@ -520,62 +520,69 @@ const Skills = ({ theme = 'cyberpunk', colors, activePage }) => {
         {/* Bio Text Content */}
         <section className="mb-16 text-left w-full">
           <div className="bio-content">
-            <p className={`bio-paragraph bio-paragraph-1 ${getTextColor('paragraph')}`}>
-              Há 13 anos transformando ideias em código e cafezinhos em commits. Especialista em fazer usuários 
-              clicarem em "Adicionar ao carrinho" mesmo quando o salário ainda não caiu.
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-2 ${getTextColor('paragraph')}`}>
-              Veterano das guerras de e-commerce, sobrevivi a uma década inteira no campo de batalha do 
-              {createTechSpan('VTEX', activeColors.primary, 'Plataforma de e-commerce brasileira com recursos avançados', '🛒', 'ecommerce')}, 
-              onde aprendi a transformar layouts impossíveis em realidade (e a explicar gentilmente para clientes 
-              por que seus sonhos de "igual ao Amazon, mas melhor" precisam de ajustes).
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-3 ${getTextColor('paragraph')}`}>
-              Já naveguei pelas águas turbulentas do 
-              {createTechSpan('Salesforce Commerce Cloud', activeColors.secondary, 'Plataforma de comércio digital da Salesforce para experiências omnichannel', '☁️', 'ecommerce')}, 
-              dancei a valsa complexa do 
-              {createTechSpan('Magento', activeColors.tertiary, 'Plataforma de comércio eletrônico flexível e de código aberto', '🧩', 'ecommerce')} 
-              e domei a fera chamada 
-              {createTechSpan('Shopify', activeColors.primary, 'Plataforma de e-commerce all-in-one para pequenas e médias empresas', '🛍️', 'ecommerce')}. 
-              Fluente em 
-              {createTechSpan('React', activeColors.secondary, 'Biblioteca JavaScript para construir interfaces de usuário', '⚛️', 'frontend')}, 
-              {createTechSpan('jQuery', activeColors.tertiary, 'Biblioteca JavaScript rápida, pequena e rica em recursos', '🔄', 'frontend')}, 
-              {createTechSpan('Vue.js', activeColors.primary, 'Framework JavaScript progressivo para construir interfaces de usuário', '🟢', 'frontend')}, 
-              e em explicar para familiares o que exatamente eu faço para viver.
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-4 ${getTextColor('paragraph')}`}>
-              Quando não estou otimizando a jornada de checkout, estou criando mundos virtuais através de 
-              {createTechSpan('JavaScript', activeColors.secondary, 'Linguagem de programação versátil para desenvolvimento web', '📜', 'frontend')}. 
-              Sim, descobri que fazer joguinhos é mais divertido que debugar carrinhos de compra (quem diria?).
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-5 ${getTextColor('paragraph')}`}>
-              Aventureiro ocasional no território do back-end com 
-              {createTechSpan('Node.js', activeColors.tertiary, 'Ambiente de execução JavaScript do lado do servidor', '🟢', 'backend')} 
-              e 
-              {createTechSpan('PHP', activeColors.primary, 'Linguagem de script especialmente adequada para desenvolvimento web', '🐘', 'backend')}, 
-              onde tento não quebrar bancos de dados e aprendo que o front-end nem sempre tem culpa de tudo.
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-6 ${getTextColor('paragraph')}`}>
-              Especialidades incluem: 
-              {createTechSpan('HTML5', activeColors.secondary, 'Linguagem de marcação para estruturar conteúdo na web', '🌐', 'frontend')}, 
-              {createTechSpan('CSS3', activeColors.tertiary, 'Linguagem de estilo para design de páginas web', '🎨', 'frontend')} 
-              (e todas suas variantes fashion), 
-              {createTechSpan('JavaScript', activeColors.primary, 'Linguagem de programação versátil para desenvolvimento web', '📜', 'frontend')} 
-              (e seus infinitos frameworks), 
-              {createTechSpan('APIs RESTful', activeColors.secondary, 'Arquitetura para projetar aplicações em rede', '🔌', 'backend')}, 
-              {createTechSpan('GraphQL', activeColors.tertiary, 'Linguagem de consulta para APIs', '📊', 'backend')}, 
-              {createTechSpan('Git', activeColors.primary, 'Sistema de controle de versão distribuído', '📂', 'tools')} 
-              (e a arte de resolver conflitos de merge sem pânico), além de um talento especial para transformar requisições vagas em produtos funcionais.
-            </p>
-            
-            <p className={`bio-paragraph bio-paragraph-7 ${getTextColor('paragraph')}`}>
-              Se você precisa de alguém que entenda tanto de UX/UI quanto de como fazer seu e-commerce não cair na Black Friday, eu sou seu desenvolvedor. E se precisar de alguém para testar seu jogo, também estou disponível. Puramente por motivos profissionais, claro.
-            </p>
+          // Em src/components/Pages/Skills.js
+// Modifique a bio do desenvolvedor para um tom mais elegante e profissional
+
+<p className={`bio-paragraph bio-paragraph-1 ${getTextColor('paragraph')}`}>
+  <span className="font-semibold">Especialista em desenvolvimento front-end</span> com extenso histórico em projetos de e-commerce. 
+  Transformo conceitos de design em interfaces funcionais que equilibram estética e performance, 
+  sempre com atenção aos detalhes que convertem visitantes em clientes.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-2 ${getTextColor('paragraph')}`}>
+  Ao longo de uma década, desenvolvi profunda expertise na plataforma 
+  {createTechSpan('VTEX', activeColors.primary, 'Plataforma de e-commerce brasileira com recursos avançados', '🛒', 'ecommerce')}, 
+  onde aprimorei a habilidade de traduzir requisitos complexos em implementações técnicas eficientes. 
+  Essa experiência me proporcionou um entendimento singular do processo completo de desenvolvimento para comércio digital, 
+  desde a concepção até escalabilidade e otimização.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-3 ${getTextColor('paragraph')}`}>
+  Meu portfólio inclui trabalhos com diversas plataformas de comércio digital, como
+  {createTechSpan('Salesforce Commerce Cloud', activeColors.secondary, 'Plataforma de comércio digital da Salesforce para experiências omnichannel', '☁️', 'ecommerce')}, 
+  {createTechSpan('Magento', activeColors.tertiary, 'Plataforma de comércio eletrônico flexível e de código aberto', '🧩', 'ecommerce')} 
+  e
+  {createTechSpan('Shopify', activeColors.primary, 'Plataforma de e-commerce all-in-one para pequenas e médias empresas', '🛍️', 'ecommerce')}. 
+  Essa versatilidade me permitiu aprofundar conhecimentos em 
+  {createTechSpan('React', activeColors.secondary, 'Biblioteca JavaScript para construir interfaces de usuário', '⚛️', 'frontend')}, 
+  {createTechSpan('jQuery', activeColors.tertiary, 'Biblioteca JavaScript rápida, pequena e rica em recursos', '🔄', 'frontend')}
+  e 
+  {createTechSpan('Vue.js', activeColors.primary, 'Framework JavaScript progressivo para construir interfaces de usuário', '🟢', 'frontend')}, 
+  sempre adaptando as soluções às necessidades específicas de cada projeto.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-4 ${getTextColor('paragraph')}`}>
+  <span className="font-medium">Recentemente, tenho dedicado parte do meu tempo ao desenvolvimento de jogos</span> utilizando
+  {createTechSpan('JavaScript', activeColors.secondary, 'Linguagem de programação versátil para desenvolvimento web', '📜', 'frontend')}. 
+  Esta nova área de interesse tem se mostrado não apenas um meio de expandir meu repertório técnico, 
+  mas também uma forma de aplicar meus conhecimentos de UX/UI em contextos mais interativos e dinâmicos.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-5 ${getTextColor('paragraph')}`}>
+  <span className="font-medium">No back-end</span>, tenho experiência prática com 
+  {createTechSpan('Node.js', activeColors.tertiary, 'Ambiente de execução JavaScript do lado do servidor', '🟢', 'backend')} 
+  e 
+  {createTechSpan('PHP', activeColors.primary, 'Linguagem de script especialmente adequada para desenvolvimento web', '🐘', 'backend')}, 
+  permitindo-me compreender o panorama completo do desenvolvimento e otimizar a integração entre front e back-end.
+  Esta visão abrangente tem sido fundamental para a criação de soluções que equilibram estética e funcionalidade.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-6 ${getTextColor('paragraph')}`}>
+  <span className="font-semibold">Minhas competências técnicas incluem:</span> 
+  {createTechSpan('HTML5', activeColors.secondary, 'Linguagem de marcação para estruturar conteúdo na web', '🌐', 'frontend')}, 
+  {createTechSpan('CSS3', activeColors.tertiary, 'Linguagem de estilo para design de páginas web', '🎨', 'frontend')} 
+  e seus pré-processadores, 
+  {createTechSpan('JavaScript', activeColors.primary, 'Linguagem de programação versátil para desenvolvimento web', '📜', 'frontend')} 
+  e seus frameworks modernos, 
+  {createTechSpan('APIs RESTful', activeColors.secondary, 'Arquitetura para projetar aplicações em rede', '🔌', 'backend')}, 
+  {createTechSpan('GraphQL', activeColors.tertiary, 'Linguagem de consulta para APIs', '📊', 'backend')}, 
+  {createTechSpan('Git', activeColors.primary, 'Sistema de controle de versão distribuído', '📂', 'tools')} 
+  e metodologias ágeis. Mantenho-me constantemente atualizado com as tendências e melhores práticas do setor.
+</p>
+
+<p className={`bio-paragraph bio-paragraph-7 ${getTextColor('paragraph')}`}>
+  Minha abordagem combina expertise técnica e visão estratégica de negócios, permitindo-me criar soluções digitais que não apenas funcionam impecavelmente, mas também geram resultados mensuráveis. Se você busca um desenvolvedor que entenda as nuances do e-commerce e possa trazer novas perspectivas através da experiência com desenvolvimento de jogos, estou à disposição para discutir como posso contribuir com seu projeto.
+</p>
           </div>
         </section>
         

@@ -13,8 +13,10 @@ import {
   Send,
   MessageSquare,
   Phone,
+  Gamepad2,
 } from "lucide-react";
 import TerminalContactForm from "./TerminalContactForm";
+import SharedTerminal from "./SharedTerminal";
 import SimpleTransition from "./RetroTransition";
 import LogoAnimation from "./LogoAnimation";
 import NameAnimation from "./NameAnimation";
@@ -31,9 +33,16 @@ import './home.css';
 const Portfolio = () => {
   const [theme, setTheme] = useState("black"); 
   const [activePage, setActivePage] = useState("home");
-  const [contactOpen, setContactOpen] = useState(false); 
   const [transitionActive, setTransitionActive] = useState(false);
   const [nextPage, setNextPage] = useState("home");
+  const [gameExpanded, setGameExpanded] = useState(false);
+  
+  // States for terminals
+  const [isGameTerminalOpen, setIsGameTerminalOpen] = useState(false);
+  const gameTerminalRef = useRef(null);
+  
+  // Reference for the terminal content
+  const terminalContentRef = useRef(null);
 
   const colors = themeColors[theme];
 
@@ -65,7 +74,15 @@ const Portfolio = () => {
     }
   };
 
+  // Open the game terminal
+  const openGameTerminal = () => {
+    setIsGameTerminalOpen(true);
+  };
 
+  // Close the game terminal
+  const closeGameTerminal = () => {
+    setIsGameTerminalOpen(false);
+  };
 
   return (
     <>
@@ -139,10 +156,11 @@ const Portfolio = () => {
               >
                 <MessageSquare size={16} className="animate-bounce" />
                 <span>
+                  {/* Using the proper TerminalContactForm component with bottom position */}
                   <TerminalContactForm
                     buttonType="text"
                     buttonText="Say hi to me..."
-                    position="bottom-center"
+                    position="bottom"
                     className="terminal-container"
                   />
                 </span>
@@ -184,226 +202,251 @@ const Portfolio = () => {
 
             {/* Content Pages */}
             {activePage === "home" && (
-              <div
-                className={`flex h-full ${colors.bg} ${colors.text}`}
-                style={{ height: "calc(100% - 64px)" }}
-              >
-                {/* Left Content - Developer Introduction */}
-                <div className="w-1/2 flex flex-col justify-center p-8 relative">
-                  <div className="relative z-10">
-                    {/* Glowing badge for cyberpunk theme */}
-                    {theme === "cyberpunk" && (
-                      <div className="inline-block px-3 py-1 mb-6 border border-pink-500 text-cyan-300 text-sm tracking-wider animate-pulse">
-                        {"<"}DEV{">"}
-                      </div>
-                    )}
+  <div className={`flex h-full ${colors.bg} ${colors.text}`} style={{ height: "calc(100% - 64px)" }}>
+    {/* Lado esquerdo - Apresentação do desenvolvedor com textos CENTRALIZADOS */}
+    <div className="w-1/2 flex flex-col justify-center items-center px-8 py-8 relative">
+      <div className="relative z-10 max-w-xl text-center">
+        {/* Badge para theme cyberpunk */}
+        {theme === "cyberpunk" && (
+          <div className="inline-block px-3 py-1 mb-6 border border-pink-500 text-cyan-300 text-sm font-medium tracking-wider">
+            {"<"}DEV{">"}
+          </div>
+        )}
 
-                    <h1
-                      className={`text-5xl md:text-6xl font-bold mb-2 ${
-                        theme === "cyberpunk"
-                          ? "text-cyan-300 cyberpunk-glow"
-                          : ""
-                      }`}
-                    >
-                      Hello, I'm
-                    </h1>
+        {/* Título principal com nome */}
+        <div className="mb-8">
+          <h1 className={`text-5xl md:text-6xl font-bold mb-1 ${
+            theme === "cyberpunk" ? "text-cyan-300 cyberpunk-glow" : ""
+          }`}>
+            Hello, I'm
+          </h1>
+          
+          <h2 className={`text-6xl md:text-7xl font-extrabold ${
+            theme === "cyberpunk" ? "text-pink-300" : ""
+          }`}>
+            Jonathan Lacerda
+          </h2>
+          
+          <div className={`w-32 h-1 mt-6 mb-8 mx-auto ${
+            theme === "cyberpunk" ? "bg-pink-500" : "bg-gray-400"
+          }`}></div>
+        </div>
 
-                    <h2
-                      className={`text-4xl md:text-5xl font-bold mb-4 ${
-                        theme === "cyberpunk" ? "text-pink-300" : ""
-                      }`}
-                    >
-                      <NameAnimation themeColor={theme}/>
-                    </h2>
+        {/* Especialidades - centralizadas */}
+        <div className="flex flex-wrap gap-3 mb-6 justify-center">
+          <span className={`py-1 px-3 rounded-full text-sm font-medium ${
+            theme === "cyberpunk" 
+              ? "bg-purple-800 text-cyan-300 border border-cyan-500" 
+              : theme === "black"
+                ? "bg-gray-800 text-white border border-gray-700" 
+                : "bg-gray-200 text-gray-800 border border-gray-300"
+          }`}>Front-end Developer</span>
+          
+          <span className={`py-1 px-3 rounded-full text-sm font-medium ${
+            theme === "cyberpunk" 
+              ? "bg-purple-800 text-pink-300 border border-pink-500" 
+              : theme === "black"
+                ? "bg-gray-800 text-white border border-gray-700" 
+                : "bg-gray-200 text-gray-800 border border-gray-300"
+          }`}>VTEX Specialist</span>
+          
+          <span className={`py-1 px-3 rounded-full text-sm font-medium ${
+            theme === "cyberpunk" 
+              ? "bg-purple-800 text-cyan-300 border border-cyan-500" 
+              : theme === "black"
+                ? "bg-gray-800 text-white border border-gray-700" 
+                : "bg-gray-200 text-gray-800 border border-gray-300"
+          }`}>ReactJS</span>
+          
+          <span className={`py-1 px-3 rounded-full text-sm font-medium ${
+            theme === "cyberpunk" 
+              ? "bg-purple-800 text-pink-300 border border-pink-500" 
+              : theme === "black"
+                ? "bg-gray-800 text-white border border-gray-700" 
+                : "bg-gray-200 text-gray-800 border border-gray-300"
+          }`}>TypeScript</span>
+        </div>
 
-                    <div
-                      className={`w-48 h-1 mb-6 ${
-                        theme === "cyberpunk" ? "bg-pink-500" : "bg-gray-400"
-                      } ${theme === "cyberpunk" ? "animate-pulse" : ""}`}
-                    ></div>
+        {/* Bio - centralizada */}
+        <div className={`space-y-4 mb-8 max-w-md mx-auto ${
+          theme === "cyberpunk" ? "text-gray-300" : theme === "black" ? "text-gray-300" : "text-gray-600"
+        }`}>
+          <p className="text-lg leading-relaxed">
+            Desenvolvedor front-end com mais de uma década de experiência em arquitetura de interfaces e sistemas de e-commerce.
+          </p>
+          <p className="text-lg leading-relaxed">
+            Especializado na criação de experiências digitais refinadas e performáticas com foco em conversão.
+          </p>
+          <p className="text-lg leading-relaxed">
+            Recentemente, expandindo horizontes no desenvolvimento de jogos e aplicações interativas.
+          </p>
+        </div>
 
-                    <p
-                      className={`text-lg md:text-xl font-semibold mb-4 ${
-                        theme === "cyberpunk"
-                          ? "text-cyan-200"
-                          : "text-gray-400"
-                      }`}
-                    >
-                      Front-end Developer | VTEX Developer | ReactJS |
-                      TypeScript
-                    </p>
+        {/* Botão de contato */}
+        <button 
+          className={`mt-2 py-3 px-8 rounded-md font-medium text-lg transition-all duration-300 transform hover:scale-105 ${
+            theme === "cyberpunk" 
+              ? "bg-pink-600 text-cyan-300 hover:bg-pink-700 shadow-lg shadow-pink-900/50" 
+              : theme === "black"
+                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-900/30" 
+                : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-300/30"
+          }`}
+        >
+          Vamos conversar
+        </button>
+      </div>
+      
+      {/* Elementos decorativos de fundo - visíveis apenas em temas não-white */}
+      {theme !== "white" && (
+        <>
+          <div className="absolute top-1/4 left-1/4 w-16 h-16 rounded-full opacity-10 blur-2xl"
+            style={{ 
+              background: theme === "cyberpunk" ? 
+                "radial-gradient(circle, rgba(236,72,153,1) 0%, rgba(139,92,246,0) 70%)" : 
+                "radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(59,130,246,0) 70%)" 
+            }}
+          ></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 rounded-full opacity-10 blur-xl"
+            style={{ 
+              background: theme === "cyberpunk" ? 
+                "radial-gradient(circle, rgba(6,182,212,1) 0%, rgba(139,92,246,0) 70%)" : 
+                "radial-gradient(circle, rgba(59,130,246,0.5) 0%, rgba(59,130,246,0) 70%)" 
+            }}
+          ></div>
+        </>
+      )}
+    </div>
 
-                    <p
-                      className={`text-lg md:text-xl mb-8 ${
-                        theme === "cyberpunk"
-                          ? "text-pink-200"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      Creating elegant and functional web interfaces with modern
-                      technologies.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right Content - Full Height Battleship Terminal */}
-                <div
-                  className={`w-1/2 flex flex-col h-full ${colors.secondaryBg}`}
-                  style={{ position: 'relative', zIndex: 25 }} 
-                >
-                  {/* Gaming header */}
-                  <div className="text-center pt-6 pb-2">
-                    <h3
-                      className={`text-xl md:text-2xl font-bold mb-1 ${
-                        theme === "cyberpunk"
-                          ? "text-cyan-300 cyberpunk-glow"
-                          : ""
-                      }`}
-                    >
-                      Play Battleship Terminal
-                    </h3>
-                    <p
-                      className={`text-sm md:text-base ${
-                        theme === "cyberpunk"
-                          ? "text-pink-300"
-                          : "text-gray-400"
-                      } mb-3`}
-                    >
-                      Try your luck against the computer - can you sink all the
-                      ships?
-                    </p>
-                  </div>
-
-                  {/* Game Container - Full Height */}
-                  <div className="flex-1 px-6 pb-6 flex flex-col relative"  style={{ zIndex: 26 }}>
-                    <div
-                      className={`w-full h-full ${
-                        theme === "cyberpunk"
-                          ? "cyberpunk-border"
-                          : "border-4 border-gray-800"
-                      } rounded-lg overflow-hidden relative`}
-                    >
-                      {/* Animated corner accents */}
-                      <div
-                        className={`absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 ${
-                          theme === "cyberpunk"
-                            ? "border-cyan-400"
-                            : "border-gray-300"
-                        } z-10`}
-                      ></div>
-                      <div
-                        className={`absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 ${
-                          theme === "cyberpunk"
-                            ? "border-cyan-400"
-                            : "border-gray-300"
-                        } z-10`}
-                      ></div>
-                      <div
-                        className={`absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 ${
-                          theme === "cyberpunk"
-                            ? "border-cyan-400"
-                            : "border-gray-300"
-                        } z-10`}
-                      ></div>
-                      <div
-                        className={`absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 ${
-                          theme === "cyberpunk"
-                            ? "border-cyan-400"
-                            : "border-gray-300"
-                        } z-10`}
-                      ></div>
-
-                      {/* Monitor frame */}
-                      <div className="absolute inset-0 rounded-lg overflow-hidden">
-                        {/* CRT Screen Glare */}
-                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white to-transparent opacity-5 pointer-events-none"></div>
-
-                        {/* CRT Screen Lines */}
-                        <div
-                          className="absolute top-0 left-0 w-full h-full bg-black opacity-10 pointer-events-none"
-                          style={{
-                            backgroundImage:
-                              "repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255, 255, 255, 0.05) 1px, rgba(255, 255, 255, 0.05) 2px)",
-                            backgroundSize: "100% 2px",
-                          }}
-                        ></div>
-
-                        {/* Game display - Full size */}
-                        <div className="h-full w-full p-1 terminal-scanlines terminal-flicker">
-                          <Battleship theme={theme} />                          
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Game features bullets - at the bottom of the terminal section */}
-                  <div className="px-6 pb-4">
-                    <div className="flex flex-wrap gap-4 justify-center">
-                      <div className="flex items-center">
-                        <div
-                          className={`mr-2 text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-cyan-300"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          ★
-                        </div>
-                        <p
-                          className={`text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-pink-200"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          Classic Battleship game with terminal-style interface
-                        </p>
-                      </div>
-                      <div className="flex items-center">
-                        <div
-                          className={`mr-2 text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-cyan-300"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          ★
-                        </div>
-                        <p
-                          className={`text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-pink-200"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          Adaptive AI opponent that learns from your strategy
-                        </p>
-                      </div>
-                      <div className="flex items-center">
-                        <div
-                          className={`mr-2 text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-cyan-300"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          ★
-                        </div>
-                        <p
-                          className={`text-sm ${
-                            theme === "cyberpunk"
-                              ? "text-pink-200"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          Retro aesthetic with modern gameplay
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+    {/* Lado direito - Jogo Battleship em formato compacto inicialmente */}
+    <div className={`w-1/2 flex flex-col h-full ${colors.secondaryBg}`} style={{ position: 'relative' }}>
+      {/* Versão compacta do jogo (visível quando não expandido) */}
+      {!gameExpanded && (
+        <div 
+          className={`flex flex-col items-center justify-center h-full cursor-pointer transition-all duration-300 hover:bg-opacity-80`}
+          onClick={() => setGameExpanded(true)}
+        >
+          <div className={`w-64 h-64 relative overflow-hidden rounded-lg ${
+            theme === "cyberpunk" 
+              ? "border-2 border-cyan-500" 
+              : theme === "white" 
+                ? "border-2 border-gray-300" 
+                : "border border-gray-700"
+          }`}
+          style={{
+            boxShadow: theme === "cyberpunk" 
+              ? "0 0 15px rgba(6, 182, 212, 0.5)" 
+              : theme === "white" 
+                ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
+                : "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+          }}>
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+              <h3 className={`text-xl font-bold mb-2 ${
+                theme === "cyberpunk" ? "text-cyan-300 cyberpunk-glow" : ""
+              }`}>
+                Naval Combat
+              </h3>
+              
+              <div className={`my-2 ${
+                theme === "cyberpunk" ? "text-cyan-300" : theme === "black" ? "text-gray-300" : "text-gray-700"
+              } font-mono text-xs`}>
+                STATUS: AWAITING AUTHORIZATION
               </div>
-            )}
+              
+              <div className={`mt-4 mb-2 w-36 py-2 text-center text-sm font-mono ${
+                theme === "cyberpunk" 
+                  ? "border border-cyan-500 text-cyan-300"
+                  : theme === "black"
+                    ? "border border-gray-500 text-gray-300"
+                    : "border border-gray-400 text-gray-600"
+              }`}>
+                SHALL WE PLAY A GAME?
+              </div>
+              
+              <p className={`mt-4 text-xs ${
+                theme === "cyberpunk" ? "text-pink-300" : "text-gray-500"
+              }`}>
+                Click to expand
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Versão expandida do jogo (visível quando expandido) */}
+      {gameExpanded && (
+        <div className="relative h-full w-full">
+          {/* Botão para minimizar */}
+          <button 
+            className={`absolute top-4 right-4 z-30 p-1 rounded-full ${
+              theme === "cyberpunk" 
+                ? "bg-pink-900 text-cyan-300 hover:bg-pink-800" 
+                : theme === "black"
+                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600" 
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => setGameExpanded(false)}
+            title="Minimize game"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+          
+          {/* Gaming header */}
+          <div className="text-center pt-6 pb-2">
+            <h3 className={`text-xl md:text-2xl font-bold mb-1 ${
+              theme === "cyberpunk" ? "text-cyan-300 cyberpunk-glow" : ""
+            }`}>
+              Play Battleship
+            </h3>
+            <p className={`text-sm md:text-base ${
+              theme === "cyberpunk" ? "text-pink-300" : "text-gray-400"
+            } mb-3`}>
+              Try your luck against the computer - can you sink all the ships?
+            </p>
+          </div>
+
+          {/* Game Container - Full Height */}
+          <div className="flex-1 px-6 pb-6 flex flex-col h-5/6" style={{ zIndex: 26 }}>
+            {/* Jogo com bordas e estilo adequados para o tema */}
+            <div 
+              className={`w-full h-full overflow-hidden relative ${
+                theme === "cyberpunk" 
+                  ? "border-2 border-cyan-500 rounded-md" 
+                  : theme === "white" 
+                    ? "border-2 border-gray-300 rounded-md" 
+                    : "border border-gray-700 rounded-md"
+              }`}
+              style={{
+                boxShadow: theme === "cyberpunk" 
+                  ? "0 0 15px rgba(6, 182, 212, 0.5)" 
+                  : theme === "white" 
+                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)" 
+                    : "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+              }}
+            >
+              {/* Efeitos sutis de CRT apenas para temas não-white */}
+              {theme !== "white" && (
+                <div 
+                  className="absolute inset-0 pointer-events-none z-10" 
+                  style={{
+                    backgroundImage: theme === "cyberpunk"
+                      ? 'repeating-linear-gradient(0deg, rgba(0, 255, 255, 0.03), rgba(0, 255, 255, 0.03) 1px, transparent 1px, transparent 2px)'
+                      : 'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.02) 1px, transparent 1px, transparent 2px)',
+                    backgroundSize: '100% 2px',
+                    opacity: theme === "cyberpunk" ? 0.4 : 0.2
+                  }}
+                ></div>
+              )}
+              
+              <Battleship theme={theme} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
             {/* Skills Page */}
             <Skills
@@ -414,193 +457,7 @@ const Portfolio = () => {
             />
 
             {/* Work Page - E-commerce Style */}
-
             <Work theme={theme} colors={colors} projects={projects} />
-
-            {/* Formulário de Contato */}
-            <div
-              className={`fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-70 transition-opacity duration-300 ${
-                contactOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-              }`}
-            >
-              <div
-                className={`${
-                  colors.cardBg
-                } rounded-lg shadow-xl w-full max-w-lg transform transition-all duration-300 ${
-                  contactOpen
-                    ? "scale-100 translate-y-0"
-                    : "scale-95 -translate-y-8"
-                } ${
-                  theme === "cyberpunk"
-                    ? "cyberpunk-border"
-                    : "border border-gray-600"
-                }`}
-              >
-                {/* Header */}
-                <div
-                  className={`flex justify-between items-center p-5 border-b ${colors.border}`}
-                >
-                  <h3
-                    className={`text-xl font-bold ${
-                      theme === "cyberpunk"
-                        ? "text-cyan-300 cyberpunk-glow"
-                        : colors.text
-                    }`}
-                  >
-                    Get in touch
-                  </h3>
-                  <button
-                    onClick={() => setContactOpen(false)}
-                    className={`p-1 rounded-full hover:bg-opacity-10 hover:bg-gray-300 transition-all duration-200 transform hover:rotate-90 ${colors.text}`}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-
-                {/* Formulário */}
-                <div className="p-5">
-                  <form className="space-y-4">
-                    <div>
-                      <label
-                        htmlFor="name"
-                        className={`block mb-1 font-medium ${
-                          theme === "cyberpunk" ? "text-pink-300" : colors.text
-                        }`}
-                      >
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        className={`w-full px-4 py-2 rounded-md ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-950 text-cyan-300 border border-pink-600 focus:border-cyan-400"
-                            : theme === "black"
-                            ? "bg-gray-800 text-white border border-gray-600 focus:border-blue-500"
-                            : "bg-white text-black border border-gray-300 focus:border-blue-500"
-                        } focus:outline-none transition-colors duration-200`}
-                        placeholder="Your name"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="email"
-                        className={`block mb-1 font-medium ${
-                          theme === "cyberpunk" ? "text-pink-300" : colors.text
-                        }`}
-                      >
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        className={`w-full px-4 py-2 rounded-md ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-950 text-cyan-300 border border-pink-600 focus:border-cyan-400"
-                            : theme === "black"
-                            ? "bg-gray-800 text-white border border-gray-600 focus:border-blue-500"
-                            : "bg-white text-black border border-gray-300 focus:border-blue-500"
-                        } focus:outline-none transition-colors duration-200`}
-                        placeholder="your@email.com"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="message"
-                        className={`block mb-1 font-medium ${
-                          theme === "cyberpunk" ? "text-pink-300" : colors.text
-                        }`}
-                      >
-                        Message
-                      </label>
-                      <textarea
-                        id="message"
-                        rows="4"
-                        className={`w-full px-4 py-2 rounded-md ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-950 text-cyan-300 border border-pink-600 focus:border-cyan-400"
-                            : theme === "black"
-                            ? "bg-gray-800 text-white border border-gray-600 focus:border-blue-500"
-                            : "bg-white text-black border border-gray-300 focus:border-blue-500"
-                        } focus:outline-none transition-colors duration-200`}
-                        placeholder="Your message..."
-                      ></textarea>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className={`w-full py-3 rounded-md flex items-center justify-center gap-2 font-medium transition-all duration-200 ${
-                        theme === "cyberpunk"
-                          ? "bg-pink-600 text-cyan-300 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/50"
-                          : theme === "black"
-                          ? "bg-white text-black hover:bg-gray-200"
-                          : "bg-black text-white hover:bg-gray-900"
-                      }`}
-                    >
-                      <Send size={18} />
-                      <span>Send Message</span>
-                    </button>
-                  </form>
-
-                  {/* Social Links */}
-                  <div className="mt-8 pt-5 border-t border-gray-700">
-                    <h4
-                      className={`mb-4 font-medium ${
-                        theme === "cyberpunk" ? "text-cyan-300" : colors.text
-                      }`}
-                    >
-                      Or connect with me via:
-                    </h4>
-                    <div className="flex gap-4 justify-center">
-                      <a
-                        href="https://linkedin.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`p-3 rounded-full transition-transform duration-200 hover:scale-110 ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-800 text-cyan-300"
-                            : theme === "black"
-                            ? "bg-gray-800 text-blue-400"
-                            : "bg-gray-200 text-blue-700"
-                        }`}
-                      >
-                        <Linkedin size={24} />
-                      </a>
-                      <a
-                        href="https://wa.me/1234567890"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`p-3 rounded-full transition-transform duration-200 hover:scale-110 ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-800 text-pink-300"
-                            : theme === "black"
-                            ? "bg-gray-800 text-green-400"
-                            : "bg-gray-200 text-green-600"
-                        }`}
-                      >
-                        <Phone size={24} />
-                      </a>
-                      <a
-                        href="https://t.me/username"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`p-3 rounded-full transition-transform duration-200 hover:scale-110 ${
-                          theme === "cyberpunk"
-                            ? "bg-purple-800 text-cyan-300"
-                            : theme === "black"
-                            ? "bg-gray-800 text-blue-400"
-                            : "bg-gray-200 text-blue-500"
-                        }`}
-                      >
-                        <Send size={24} />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Footer - Navigation */}
             <div className={`flex ${colors.border} border-t relative`}>

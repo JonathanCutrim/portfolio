@@ -1,41 +1,44 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Terminal as TerminalIcon, X, Minus, Maximize, ChevronUp } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Terminal as TerminalIcon, X, Minus, Maximize } from 'lucide-react';
 
-// Componente de Terminal Individual
-export const Terminal = ({ 
-  id,
-  isOpen, 
-  isMinimized,
-  onClose, 
-  onMinimize,
-  onRestore,
+const SharedTerminal = ({ 
+  id = `terminal-${Math.random().toString(36).substr(2, 9)}`,
+  isOpen = false, 
+  isMinimized = false,
+  onClose = () => {},
+  onMinimize = () => {},
+  onRestore = () => {},
   title = "Terminal", 
   terminalType = "centered", // "centered", "bottom", "fullscreen"
   command = "sudo ./terminal.sh",
+  contentRef = null,
   children,
-  zIndex,
-  position: initialPosition = { x: 50, y: 50 }
+  zIndex = 1000,
+  position = { x: 50, y: 50 }
 }) => {
   const terminalRef = useRef(null);
-  const contentRef = useRef(null);
   const [dimensions, setDimensions] = useState({
     width: terminalType === "fullscreen" ? "100%" : "680px",
-    height: terminalType === "fullscreen" ? "100%" : "400px"
+    height: terminalType === "fullscreen" ? "100%" : terminalType === "bottom" ? "300px" : "400px"
   });
-  const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
   const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
   const [startDimensions, setStartDimensions] = useState({ width: 0, height: 0 });
   const [startDragPosition, setStartDragPosition] = useState({ x: 0, y: 0 });
+  const [currentPosition, setCurrentPosition] = useState(position);
+  
+  // Forward contentRef to child content
+  const internalContentRef = useRef(null);
+  const effectiveContentRef = contentRef || internalContentRef;
   
   useEffect(() => {
     // Scroll to bottom when content changes
-    if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+    if (effectiveContentRef.current) {
+      effectiveContentRef.current.scrollTop = effectiveContentRef.current.scrollHeight;
     }
-  }, [children]);
+  }, [children, effectiveContentRef]);
   
   useEffect(() => {
     if (isResizing) {
@@ -64,8 +67,9 @@ export const Terminal = ({
   const startDrag = (e) => {
     if (terminalType === "fullscreen" || terminalType === "bottom") return;
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
-    setStartDragPosition({ x: e.clientX - position.x, y: e.clientY - position.y });
+    setStartDragPosition({ x: e.clientX - currentPosition.x, y: e.clientY - currentPosition.y });
   };
 
   // Handle dragging
@@ -78,7 +82,7 @@ export const Terminal = ({
     const maxX = window.innerWidth - parseFloat(dimensions.width);
     const maxY = window.innerHeight - parseFloat(dimensions.height);
     
-    setPosition({
+    setCurrentPosition({
       x: Math.min(Math.max(0, newX), maxX),
       y: Math.min(Math.max(0, newY), maxY)
     });
@@ -113,8 +117,8 @@ export const Terminal = ({
     
     let newWidth = dimensions.width;
     let newHeight = dimensions.height;
-    let newX = position.x;
-    let newY = position.y;
+    let newX = currentPosition.x;
+    let newY = currentPosition.y;
     
     const deltaX = e.clientX - startPosition.x;
     const deltaY = e.clientY - startPosition.y;
@@ -133,7 +137,7 @@ export const Terminal = ({
       const calculatedWidth = startDimensions.width - deltaX;
       if (calculatedWidth >= 300 && calculatedWidth <= maxWidth) {
         newWidth = `${calculatedWidth}px`;
-        newX = position.x + deltaX;
+        newX = currentPosition.x + deltaX;
       }
     }
     
@@ -148,13 +152,13 @@ export const Terminal = ({
       const calculatedHeight = startDimensions.height - deltaY;
       if (calculatedHeight >= 200 && calculatedHeight <= maxHeight) {
         newHeight = `${calculatedHeight}px`;
-        newY = position.y + deltaY;
+        newY = currentPosition.y + deltaY;
       }
     }
     
     // Apply the new dimensions and position
     setDimensions({ width: newWidth, height: newHeight });
-    setPosition({ x: newX, y: newY });
+    setCurrentPosition({ x: newX, y: newY });
     
     e.preventDefault();
   };
@@ -173,12 +177,12 @@ export const Terminal = ({
     switch (terminalType) {
       case "bottom":
         return {
-          container: "fixed bottom-0 left-0 right-0 z-50",
-          terminal: "w-full max-h-64 border-t border-gray-700 shadow-lg"
+          container: "fixed bottom-0 left-0 right-0",
+          terminal: "w-full border-t border-gray-700 shadow-lg"
         };
       case "fullscreen":
         return {
-          container: "fixed inset-0 z-50 pt-16",
+          container: "fixed inset-0",
           terminal: "w-full h-full"
         };
       case "centered":
@@ -200,25 +204,28 @@ export const Terminal = ({
       className={`${styles.container}`} 
       style={{ 
         zIndex,
-        left: terminalType === "centered" ? `${position.x}px` : 0,
-        top: terminalType === "centered" ? `${position.y}px` : 0,
+        left: terminalType === "centered" ? `${currentPosition.x}px` : 0,
+        top: terminalType === "centered" ? `${currentPosition.y}px` : 0,
         transform: 'translate3d(0,0,0)',
         backfaceVisibility: 'hidden'
       }}
     >
       <div 
         ref={terminalRef}
-        className={`shadow-2xl border border-gray-700 flex flex-col overflow-hidden bg-gray-900 ${styles.terminal}`}
+        className={`terminal-window shadow-2xl border border-gray-700 flex flex-col overflow-hidden bg-gray-900 ${styles.terminal}`}
         style={{
           width: terminalType === "fullscreen" || terminalType === "bottom" ? '100%' : dimensions.width,
           height: terminalType === "fullscreen" ? '100%' : 
-                 terminalType === "bottom" ? 'auto' : dimensions.height
+                 terminalType === "bottom" ? '300px' : dimensions.height,
+          zIndex: terminalType === "fullscreen" ? 1050 : 1000
         }}
       >
         {/* Terminal Header */}
         <div 
-          className="flex items-center px-3 py-2 bg-gray-800 border-b border-gray-700 cursor-move"
-          onMouseDown={startDrag}
+          className={`terminal-header flex items-center px-3 py-2 bg-gray-800 border-b border-gray-700 ${
+            terminalType !== "fullscreen" && terminalType !== "bottom" ? "cursor-move" : ""
+          }`}
+          onMouseDown={terminalType !== "fullscreen" && terminalType !== "bottom" ? startDrag : undefined}
         >
           <div className="flex-grow text-sm text-gray-300 font-mono flex items-center">
             <TerminalIcon size={16} className="mr-2 text-green-400" />
@@ -242,7 +249,7 @@ export const Terminal = ({
               onClick={(e) => {
                 e.stopPropagation();
                 // Toggle between fullscreen and centered
-                //onToggleFullscreen();
+                // onToggleFullscreen();
               }}
               title="Maximize terminal"
             >
@@ -263,8 +270,8 @@ export const Terminal = ({
         
         {/* Terminal Content */}
         <div 
-          ref={contentRef}
-          className="p-3 font-mono text-sm flex-1 overflow-y-auto bg-gray-900 text-green-400 w-full"
+          ref={effectiveContentRef}
+          className="terminal-content p-3 font-mono text-sm flex-1 overflow-y-auto bg-gray-900 text-green-400 w-full"
           style={{
             fontFamily: "Consolas, 'Courier New', monospace",
             lineHeight: "1.4",
@@ -339,161 +346,4 @@ export const Terminal = ({
   );
 };
 
-// Barra de terminais minimizados
-const MinimizedTerminalBar = ({ minimizedTerminals, onRestore }) => {
-  if (!minimizedTerminals.length) return null;
-  
-  return (
-    <div className="fixed bottom-0 left-0 right-0 flex gap-1 px-2 py-1 bg-gray-800 border-t border-gray-700 z-50">
-      {minimizedTerminals.map(terminal => (
-        <div 
-          key={terminal.id}
-          className="flex items-center bg-gray-900 text-gray-300 rounded-md px-3 py-1 text-sm cursor-pointer hover:bg-gray-700 transition-colors"
-          onClick={() => onRestore(terminal.id)}
-        >
-          <TerminalIcon size={14} className="mr-2 text-green-400" />
-          <span className="mr-1">{terminal.title}</span>
-          <ChevronUp size={14} className="ml-1 text-gray-400" />
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Gerenciador de Múltiplos Terminais
-const TerminalManager = () => {
-  const [terminals, setTerminals] = useState([]);
-  const [nextId, setNextId] = useState(1);
-  const [nextZIndex, setNextZIndex] = useState(1000);
-  
-  // Posiciona os terminais em locais diferentes para evitar sobreposição total
-  const calculateInitialPosition = (id) => {
-    const offset = (id - 1) * 30;
-    return { x: 100 + offset, y: 80 + offset };
-  };
-  
-  // Exemplo de conteúdos possíveis para os terminais
-  const terminalContents = {
-    default: "Terminal v1.0.0 (c) 2025 Developer\n\n> cd /projects\n> ls -la\ntotal 164\ndrwxr-xr-x  12 user  staff    384 Mar 28 10:45 .\ndrwxr-xr-x   3 user  staff     96 Mar 28 09:12 ..\n-rw-r--r--   1 user  staff   1955 Mar 28 09:45 .eslintrc.json\n-rw-r--r--   1 user  staff   1019 Mar 28 09:32 .gitignore\ndrwxr-xr-x  12 user  staff    384 Mar 28 10:01 node_modules\n-rw-r--r--   1 user  staff   1256 Mar 28 09:32 package.json\ndrwxr-xr-x   5 user  staff    160 Mar 28 09:55 public\ndrwxr-xr-x   8 user  staff    256 Mar 28 10:15 src\n-rw-r--r--   1 user  staff   3901 Mar 28 09:40 tsconfig.json\n\n> ",
-    logs: "Logs do sistema:\n\n2025-03-28 12:34:56 [INFO] Sistema iniciado\n2025-03-28 12:35:02 [INFO] Conexão estabelecida\n2025-03-28 12:35:21 [WARN] Uso de memória alto\n2025-03-28 12:36:14 [INFO] Backup automático iniciado\n2025-03-28 12:38:55 [ERROR] Falha na conexão com banco de dados\n2025-03-28 12:39:01 [INFO] Reconectando...\n2025-03-28 12:39:05 [INFO] Conexão restaurada\n\n> tail -f /var/log/system.log\nEsperando novos eventos...\n",
-    process: "Iniciando processo...\n\n[======              ] 30% concluído\n\nInstalling dependencies...\nnpm install --save react lucide-react tailwindcss\n\nAdded 238 packages in 2.5s\n\n> npm run build\n\nCreating optimized production build...\n",
-  };
-
-  // Criar um novo terminal
-  const createTerminal = useCallback((type = "default", title = "Terminal") => {
-    const id = nextId;
-    const content = terminalContents[type] || terminalContents.default;
-    const command = type === "logs" ? "tail -f /var/log/system.log" : 
-                   type === "process" ? "npm install" : "bash";
-    
-    const position = calculateInitialPosition(id);
-    
-    const newTerminal = {
-      id,
-      title,
-      content,
-      command,
-      isOpen: true,
-      isMinimized: false,
-      terminalType: "centered",
-      zIndex: nextZIndex,
-      position // Uso da posição calculada
-    };
-    
-    setTerminals(prevTerminals => [...prevTerminals, newTerminal]);
-    setNextId(prevId => prevId + 1);
-    setNextZIndex(prevZIndex => prevZIndex + 1);
-    
-    return id;
-  }, [nextId, nextZIndex, terminalContents]);
-
-  // Fechar um terminal
-  const closeTerminal = (id) => {
-    setTerminals(terminals.filter(terminal => terminal.id !== id));
-  };
-
-  // Minimizar um terminal
-  const minimizeTerminal = (id) => {
-    setTerminals(terminals.map(terminal => 
-      terminal.id === id ? { ...terminal, isMinimized: true } : terminal
-    ));
-  };
-
-  // Restaurar um terminal minimizado
-  const restoreTerminal = (id) => {
-    // Trazer para frente (aumentar o zIndex)
-    const newZIndex = nextZIndex;
-    setNextZIndex(newZIndex + 1);
-    
-    setTerminals(terminals.map(terminal => 
-      terminal.id === id ? { ...terminal, isMinimized: false, zIndex: newZIndex } : terminal
-    ));
-  };
-
-  // Trazer um terminal para a frente quando clicado
-  const bringToFront = (id) => {
-    const newZIndex = nextZIndex;
-    setNextZIndex(newZIndex + 1);
-    
-    setTerminals(terminals.map(terminal => 
-      terminal.id === id ? { ...terminal, zIndex: newZIndex } : terminal
-    ));
-  };
-
-  // Separar terminais abertos e minimizados
-  const openTerminals = terminals.filter(t => t.isOpen && !t.isMinimized);
-  const minimizedTerminals = terminals.filter(t => t.isOpen && t.isMinimized);
-
-  // Inicializa um terminal por padrão se não houver nenhum
-  useEffect(() => {
-    if (terminals.length === 0) {
-      createTerminal("default", "Terminal");
-    }
-  }, []);
-
-  return (
-    <div>
-      <div className="fixed top-4 right-4 z-50 flex gap-2">
-        <button 
-          className="px-3 py-2 bg-gray-800 text-white rounded-md flex items-center shadow-lg hover:bg-gray-700"
-          onClick={() => createTerminal("default", "Terminal")}
-        >
-          <TerminalIcon size={16} className="mr-2" />
-          Novo Terminal
-        </button>
-      </div>
-      
-      {/* Render todos os terminais abertos */}
-      {openTerminals.map(terminal => (
-        <div key={terminal.id} onClick={() => bringToFront(terminal.id)}>
-          <Terminal
-            id={terminal.id}
-            isOpen={terminal.isOpen}
-            isMinimized={terminal.isMinimized}
-            onClose={closeTerminal}
-            onMinimize={minimizeTerminal}
-            onRestore={restoreTerminal}
-            title={terminal.title}
-            command={terminal.command}
-            terminalType={terminal.terminalType}
-            zIndex={terminal.zIndex}
-            position={terminal.position || calculateInitialPosition(terminal.id)}
-          >
-            <pre className="whitespace-pre-wrap">
-              {terminal.content}
-              <span className="animate-pulse">█</span>
-            </pre>
-          </Terminal>
-        </div>
-      ))}
-      
-      {/* Barra de terminais minimizados */}
-      <MinimizedTerminalBar 
-        minimizedTerminals={minimizedTerminals} 
-        onRestore={restoreTerminal} 
-      />
-    </div>
-  );
-};
-
-export default TerminalManager;
+export default SharedTerminal;

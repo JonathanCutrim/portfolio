@@ -1,9 +1,24 @@
+// src/components/Battleship/Battleship.js - Versão completa com modo de jogo
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, X, Check, Terminal, Server, Database } from 'lucide-react';
 
 import './style.css';
 
-function Battleship({ theme = 'black' }) {
+function Battleship({ theme = 'black', isExpanded = false }) {
+  // Estados para controle de modo de jogo
+  const [gameMode, setGameMode] = useState(null); // 'online' ou 'computer'
+  const [modeSelectionVisible, setModeSelectionVisible] = useState(true);
+  
+  // Usar isExpanded para ajustar comportamentos visuais se necessário
+  useEffect(() => {
+    // Se o componente estiver sendo usado em modo expandido no portfólio,
+    // podemos ajustar alguns comportamentos visuais específicos aqui
+    if (isExpanded) {
+      // Por exemplo, podemos garantir que a animação de abertura seja mais suave
+      // ou ajustar tamanhos específicos para o layout expandido
+    }
+  }, [isExpanded]);
+  
   const getThemeColors = () => {
     switch (theme) {
       case 'white':
@@ -63,30 +78,30 @@ function Battleship({ theme = 'black' }) {
       case 'black':
       default:
         return {
-          bg: 'bg-black',
-          text: 'text-green-400',
-          secondaryText: 'text-gray-400',
-          border: 'border-gray-700',
-          primaryBg: 'bg-gray-900',
-          secondaryBg: 'bg-gray-800',
-          cellWater: 'bg-gray-800 hover:bg-gray-700',
-          cellShip: 'bg-gray-600',
-          cellHit: 'bg-red-900',
-          cellMiss: 'bg-blue-900',
-          cellScan: 'bg-yellow-800',
-          button: 'bg-gray-800 text-green-400 hover:bg-gray-700 border border-gray-600',
-          buttonSecondary: 'bg-gray-900 text-gray-300 hover:bg-gray-800 border border-gray-700',
-          buttonSelected: 'bg-blue-600 text-white border border-blue-700',
+          bg: 'bg-gray-900',             // Mais escuro, mas não preto puro
+          text: 'text-gray-200',         // Texto cinza claro em vez de verde
+          secondaryText: 'text-gray-400',// Texto secundário mais suave
+          border: 'border-gray-700',     // Bordas mais suaves
+          primaryBg: 'bg-gray-800',      // Fundo primário mais claro
+          secondaryBg: 'bg-gray-700',    // Fundo secundário mais claro
+          cellWater: 'bg-gray-700 hover:bg-gray-600', // Células de água mais suaves
+          cellShip: 'bg-gray-500',       // Navios em cinza médio
+          cellHit: 'bg-red-800',         // Hits em vermelho mais escuro
+          cellMiss: 'bg-blue-900',       // Misses em azul mais escuro
+          cellScan: 'bg-yellow-900',     // Scan em amarelo mais escuro
+          button: 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600',
+          buttonSecondary: 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700',
+          buttonSelected: 'bg-blue-800 text-white border border-blue-700',
           buttonDisabled: 'bg-gray-900 text-gray-600 cursor-not-allowed border border-gray-800',
-          highlight: 'border-blue-500',
-          input: 'bg-gray-900 border border-gray-700 text-white',
-          card: 'bg-gray-900 border border-gray-700',
-          success: 'bg-gray-900 text-green-500 border border-green-800',
-          error: 'bg-gray-900 text-red-500 border border-red-800',
-          info: 'bg-gray-900 text-blue-500 border border-blue-800',
-          accent: 'text-green-400',
-          scanlines: 'terminal-scanlines-dark',
-          glitch: 'terminal-glitch',
+          highlight: 'border-blue-600',
+          input: 'bg-gray-800 border border-gray-700 text-white',
+          card: 'bg-gray-800 border border-gray-700',
+          success: 'bg-gray-800 text-blue-400 border border-blue-800',
+          error: 'bg-gray-800 text-red-400 border border-red-800',
+          info: 'bg-gray-800 text-blue-400 border border-blue-800',
+          accent: 'text-blue-400',      // Cor de destaque azul em vez de verde
+          scanlines: 'terminal-scanlines-subtle', // Scanlines mais sutis
+          glitch: 'terminal-glitch-subtle',      // Efeito glitch mais sutil
         };
     }
   };
@@ -157,9 +172,20 @@ function Battleship({ theme = 'black' }) {
     reconnectingRef.current = true;
     addDebug("Initializing WebSocket connection...");
 
-    // ALWAYS use wss:// for secure connections
-    const wsUrl = 'wss://server-websockets.onrender.com';
-    // For local development: const wsUrl = 'ws://localhost:8080';
+    // SEMPRE use wss:// para conexões seguras
+    // URLs diferentes dependendo do modo de jogo
+    let wsUrl = 'wss://server-websockets.onrender.com';
+    
+    // Para desenvolvimento local
+    // const wsUrl = 'ws://localhost:8080';
+    
+    // Se estiver no modo online, poderia usar uma URL diferente (opcional)
+    if (gameMode === 'online') {
+      // Versão futura: wsUrl = 'wss://multiplayer-server.onrender.com';
+      addDebug('Conectando ao servidor multiplayer...');
+    } else {
+      addDebug('Conectando ao servidor de IA...');
+    }
     
     addDebug(`Connecting to ${wsUrl}`);
     
@@ -176,7 +202,11 @@ function Battleship({ theme = 'black' }) {
       
       // Request room list when connected
       setTimeout(() => {
-        sendMessageWithSocket(newSocket, { type: 'get_rooms' });
+        // Adicione o modo de jogo ao solicitar salas
+        sendMessageWithSocket(newSocket, { 
+          type: 'get_rooms',
+          gameMode: gameMode // Permite ao servidor filtrar salas pelo modo
+        });
       }, 500);
     };
     
@@ -210,11 +240,65 @@ function Battleship({ theme = 'black' }) {
     };
     
     setSocket(newSocket);
-  }, []);
+  }, [gameMode]);
+
+  // Função para selecionar o modo de jogo
+  const selectGameMode = (mode) => {
+    setGameMode(mode);
+    setModeSelectionVisible(false);
+    
+    if (mode === 'computer') {
+      // Iniciar jogo contra o computador - usar lógica existente
+      createWebSocketConnection();
+    } else if (mode === 'online') {
+      // Iniciar jogo online - conexão direta ao servidor multiplayer
+      createWebSocketConnection();
+      // Aqui você poderia ter uma lógica diferente para jogos online
+      addDebug("Modo multiplayer iniciado - buscando oponentes");
+    }
+  };
+  
+  // Função para voltar à seleção de modo
+  const backToModeSelection = () => {
+    // Se o jogo já estiver em andamento, confirmar antes de sair
+    if (gameState !== 'initial') {
+      if (window.confirm('Sair do jogo atual e voltar à seleção de modo?')) {
+        resetGame();
+        setModeSelectionVisible(true);
+        setGameMode(null);
+      }
+    } else {
+      setModeSelectionVisible(true);
+      setGameMode(null);
+    }
+  };
+  
+  // Função para resetar o jogo
+  const resetGame = () => {
+    // Resetar estados importantes
+    setGameState('initial');
+    setRoomId('');
+    setRoomName('');
+    
+    // Limpar o tabuleiro, navios, etc.
+    const emptyBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+    setYourBoard(emptyBoard);
+    setOpponentBoard(emptyBoard);
+    setYourShips({});
+    setOpponentShips({});
+    setShots([]);
+    
+    // Se havia conexão WebSocket, fechar
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.close();
+    }
+    socketRef.current = null;
+  };
 
   // New function to start the game when the button is clicked
   const startGame = () => {
-    createWebSocketConnection();
+    // Ao invés de iniciar o jogo diretamente, mostrar a seleção de modo
+    setModeSelectionVisible(true);
   };
 
   // Function to send message with a specific socket
@@ -473,10 +557,11 @@ function Battleship({ theme = 'black' }) {
     
     sendMessage({
       type: 'create_room',
-      roomName: roomName
+      roomName: roomName,
+      gameMode: gameMode // Adicionar o modo de jogo para o servidor saber
     });
     
-    addDebug(`Requesting room creation: ${roomName}`);
+    addDebug(`Requesting room creation: ${roomName} (Mode: ${gameMode})`);
     setNewRoomName('');
   };
 
@@ -506,7 +591,8 @@ function Battleship({ theme = 'black' }) {
   // Function to refresh room list
   const refreshRooms = () => {
     sendMessage({
-      type: 'get_rooms'
+      type: 'get_rooms',
+      gameMode: gameMode // Incluir modo para filtrar as salas
     });
     
     addDebug('Requesting room list');
@@ -780,12 +866,14 @@ function Battleship({ theme = 'black' }) {
     if (isOpponent) {
       if (cellState === 'hit') {
         cellContent = '✗'; // X mark for hit
-        cellClass += `${colors.text}`;
+        // Ajuste para que no tema escuro o X seja colorido em vez de usar a cor padrão de texto
+        cellClass += theme === 'black' ? 'text-red-400' : `${colors.text}`;
       } else if (cellState === 'miss') {
         cellContent = '•'; // Dot for miss
         cellClass += `${colors.secondaryText}`;
       } else if (cellState === 'scan-ship') {
-        cellContent = '░'; // Pattern for detected ship
+        // No tema escuro, use um caractere mais visível ou destaque diferente
+        cellContent = theme === 'black' ? '■' : '░'; // Caractere mais sólido para tema escuro
         cellClass += `${colors.accent}`;
       } else if (cellState === 'scan-empty') {
         cellContent = '·'; // Small dot for scanned empty
@@ -805,12 +893,14 @@ function Battleship({ theme = 'black' }) {
       if (selectedAbility === 'multiShot' && 
           multiShotPositions.some(pos => pos.x === x && pos.y === y)) {
         cellClass += ` ring-1 ${colors.highlight}`;
-        cellContent = '+'; // Target marker
+        // Ajuste para tema escuro - use caractere mais visível
+        cellContent = theme === 'black' ? '◎' : '+'; // Target marker
       }
     } else {
       if (cellState === 'hit') {
         cellContent = '✗'; // X mark for hit
-        cellClass += `text-red-500`;
+        // Ajuste para que no tema escuro o X seja vermelho
+        cellClass += theme === 'black' ? 'text-red-400' : 'text-red-500';
       } else if (cellState === 'miss') {
         cellContent = '•'; // Dot for miss
         cellClass += `${colors.secondaryText}`;
@@ -824,7 +914,8 @@ function Battleship({ theme = 'black' }) {
           case 'carrier': cellContent = '▦'; break;
           default: cellContent = '█';
         }
-        cellClass += `${colors.text}`;
+        // Ajuste de cores para tema escuro - use cores mais suaves
+        cellClass += theme === 'black' ? 'text-gray-300' : `${colors.text}`;
       } else {
         cellContent = '·'; // Small dot for empty
         cellClass += `${colors.secondaryText}`;
@@ -854,7 +945,8 @@ function Battleship({ theme = 'black' }) {
         }
         
         if (isPartOfShip) {
-          cellContent = '#'; // Marker for ship being placed
+          // Ajuste para tema escuro - use um caractere mais visível
+          cellContent = theme === 'black' ? '■' : '#'; // Marker for ship being placed
           cellClass += ` ${colors.accent} animate-pulse`;
         }
       }
@@ -1075,9 +1167,15 @@ function Battleship({ theme = 'black' }) {
   const renderLobby = () => {
     return (
       <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
-        <div className="flex items-center gap-1 mb-3">
-          <Database size={16} className={colors.accent} />
-          <h3 className={`text-sm font-bold ${colors.accent}`}>AVAILABLE SERVERS</h3>
+        {/* Cabeçalho com indicação do modo de jogo */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1">
+            <Database size={16} className={colors.accent} />
+            <h3 className={`text-sm font-bold ${colors.accent}`}>SERVIDORES DISPONÍVEIS</h3>
+          </div>
+          <div className={`text-xs py-1 px-2 border ${colors.border} ${colors.secondaryText}`}>
+            {gameMode === 'online' ? 'MULTIPLAYER' : 'SINGLE PLAYER'}
+          </div>
         </div>
         
         <div className={`flex items-center gap-2 mb-4 border ${colors.border} p-2 rounded-sm`}>
@@ -1086,21 +1184,23 @@ function Battleship({ theme = 'black' }) {
             type="text"
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
-            placeholder="SERVER NAME"
+            placeholder={gameMode === 'online' ? "NOME DA SALA MULTIPLAYER" : "NOME DA SIMULAÇÃO"}
             className={`text-xs px-2 py-1 flex-grow bg-transparent border-b ${colors.border} focus:outline-none ${colors.text} font-mono uppercase`}
           />
           <button 
             onClick={createRoom}
             className={`px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
           >
-            CREATE
+            CRIAR
           </button>
         </div>
         
         <div className="space-y-1 mb-4 max-h-64 overflow-y-auto">
           {rooms.length === 0 ? (
             <div className={`text-xs border ${colors.border} p-2 rounded-sm text-center ${colors.text}`}>
-              NO SERVERS AVAILABLE - CHECK DATA FEED
+              {gameMode === 'online' 
+                ? "NENHUMA SALA MULTIPLAYER DISPONÍVEL - CRIE UMA NOVA" 
+                : "NENHUMA SIMULAÇÃO DISPONÍVEL - INICIE UMA NOVA"}
             </div>
           ) : (
             rooms.map(room => (
@@ -1113,7 +1213,11 @@ function Battleship({ theme = 'black' }) {
                     <div className="font-bold">{room.name}</div>
                     <div className="text-xs flex items-center gap-1">
                       <Server size={12} />
-                      <span>CONNECTIONS: {room.playerCount}/2</span>
+                      <span>CONEXÕES: {room.playerCount}/2</span>
+                      {/* Indicador opcional de tipo de sala para o modo online */}
+                      {gameMode === 'online' && room.isRanked && (
+                        <span className={`ml-2 px-1 text-[10px] ${colors.accent} border ${colors.border}`}>RANQUEADA</span>
+                      )}
                     </div>
                   </div>
                   <button 
@@ -1121,7 +1225,7 @@ function Battleship({ theme = 'black' }) {
                     disabled={room.isFull}
                     className={`px-3 py-1 text-xs border ${room.isFull ? 'border-gray-500 text-gray-500 cursor-not-allowed' : `${colors.border} ${colors.text}`}`}
                   >
-                    {room.isFull ? 'FULL' : 'JOIN'}
+                    {room.isFull ? 'CHEIA' : 'ENTRAR'}
                   </button>
                 </div>
               </div>
@@ -1134,7 +1238,7 @@ function Battleship({ theme = 'black' }) {
           className={`flex items-center justify-center gap-2 w-full px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
         >
           <RefreshCw size={12} />
-          <span>REFRESH SERVER LIST</span>
+          <span>ATUALIZAR LISTA DE {gameMode === 'online' ? 'SALAS' : 'SIMULAÇÕES'}</span>
         </button>
       </div>
     );
@@ -1338,14 +1442,101 @@ function Battleship({ theme = 'black' }) {
   return (
     <div className={`${colors.bg} min-h-screen flex flex-col items-center justify-center p-4`}>
       <div className="w-full max-w-4xl">
+        {/* Mensagens de erro/conexão */}
         {renderMessages()}
         
-        {gameState === 'initial' && renderInitialScreen()}
-        {gameState === 'lobby' && renderLobby()}
-        {gameState === 'waiting' && renderWaiting()}
-        {gameState === 'setup' && renderSetup()}
-        {gameState === 'playing' && renderPlaying()}
-        {gameState === 'gameover' && renderGameOver()}
+        {/* Seleção de Modo de Jogo */}
+        {modeSelectionVisible && (
+          <div className={`${colors.bg} flex flex-col items-center justify-center py-8 px-4`}>
+            <h2 className={`text-xl md:text-2xl font-bold mb-6 ${colors.text}`}>
+              NAVAL COMBAT SYSTEM v2.3.4
+            </h2>
+            
+            <div className={`w-full max-w-md p-6 rounded-lg ${colors.primaryBg} ${colors.border} border mb-8`}>
+              <div className={`mb-6 ${colors.text} text-center`}>
+                <p className="mb-2 text-sm opacity-80 uppercase tracking-wider">SELECIONE O MODO DE JOGO</p>
+                <div className={`h-px w-3/4 mx-auto mb-6 ${colors.border}`}></div>
+              </div>
+              
+              <div className="flex flex-col space-y-4 mb-6">
+                <button
+                  onClick={() => selectGameMode('computer')}
+                  className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
+                >
+                  <div className="flex items-center">
+                    <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className={`font-bold ${colors.text}`}>Jogar contra computador</p>
+                      <p className={`text-xs ${colors.secondaryText}`}>Desafie a IA em uma batalha naval local</p>
+                    </div>
+                  </div>
+                  <span className={`${colors.accent}`}>→</span>
+                </button>
+                
+                <button
+                  onClick={() => selectGameMode('online')}
+                  className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
+                >
+                  <div className="flex items-center">
+                    <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className={`font-bold ${colors.text}`}>Jogar online</p>
+                      <p className={`text-xs ${colors.secondaryText}`}>Encontre oponentes reais para desafiar</p>
+                    </div>
+                  </div>
+                  <span className={`${colors.accent}`}>→</span>
+                </button>
+              </div>
+              
+              <div className={`text-xs text-center ${colors.secondaryText} mt-6`}>
+                <p>Versão 2.3.4 - Sistema Atualizado</p>
+                <p className="mt-1">Conexões seguras via WebSockets</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Estados do jogo - apenas visíveis quando um modo está selecionado */}
+        {!modeSelectionVisible && (
+          <>
+            {/* Botão para voltar à seleção de modo */}
+            <div className="absolute top-4 left-4 z-30">
+              <button 
+                onClick={backToModeSelection}
+                className={`px-3 py-1 text-xs rounded ${colors.secondaryBg} ${colors.text} border ${colors.border} hover:opacity-80 transition-opacity duration-200 flex items-center`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Voltar
+              </button>
+            </div>
+            
+            {/* Indicador de modo de jogo */}
+            <div className="absolute top-4 right-4 z-30">
+              <div className={`px-3 py-1 text-xs rounded ${colors.primaryBg} ${colors.text} border ${colors.border} flex items-center`}>
+                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${gameMode === 'online' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                {gameMode === 'online' ? 'Modo Online' : 'Modo Computador'}
+              </div>
+            </div>
+            
+            {/* Telas do jogo existentes */}
+            {gameState === 'initial' && renderInitialScreen()}
+            {gameState === 'lobby' && renderLobby()}
+            {gameState === 'waiting' && renderWaiting()}
+            {gameState === 'setup' && renderSetup()}
+            {gameState === 'playing' && renderPlaying()}
+            {gameState === 'gameover' && renderGameOver()}
+          </>
+        )}
       </div>
     </div>
   );

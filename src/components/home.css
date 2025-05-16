@@ -127,6 +127,48 @@ z-index: 10;
 
 /* Terminal Styles to Fix Z-Index Issues */
 
+
+
+
+/* Terminal scanlines para diferentes temas */
+.terminal-scanlines-subtle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.02) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  z-index: 10;
+  opacity: 0.3;
+}
+
+.terminal-glitch-subtle {
+  position: relative;
+}
+
+.terminal-glitch-subtle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03));
+  background-size: 100% 2px, 3px 100%;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 10;
+}
+
 /* Override any sidebar z-index to make sure they stay behind terminals */
 .sidebar, .sidebar-menu, .sidebar-content {
   z-index: 40 !important;
@@ -179,4 +221,209 @@ z-index: 10;
 
 .terminal-content::-webkit-scrollbar-thumb:hover {
   background: #444;
+}
+
+
+// Em src/components/home.css
+// Ajuste os estilos tipográficos para um visual mais elegante
+// (substitua ou adicione ao final do arquivo)
+
+/* Refinamento dos estilos tipográficos */
+.font-bold {
+  font-weight: 700;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.font-normal {
+  font-weight: 400;
+}
+
+/* Estilos mais elegantes para termos técnicos */
+.tech-term {
+  position: relative;
+  display: inline-block;
+  padding: 0 4px;
+  margin: 0 2px;
+  border-radius: 3px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tech-term::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+}
+
+.tech-term:hover::after {
+  width: 100%;
+}
+
+.tech-term:hover {
+  transform: translateY(-1px);
+}
+
+/* Estilos refinados para parágrafos */
+.bio-paragraph {
+  position: relative;
+  transition: all 0.5s ease;
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+}
+
+.bio-paragraph:not(:last-child) {
+  margin-bottom: 1.8rem;
+}
+
+.bio-paragraph:hover {
+  transform: translateX(3px);
+}
+
+/* Estilos para citações e blocos de código */
+.quote {
+  font-style: italic;
+  position: relative;
+  padding-left: 1em;
+}
+
+.quote::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  opacity: 0.6;
+}
+
+/* Efeitos sutis para transições */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.8s ease forwards;
+}
+
+/* Classes para diferentes níveis de ênfase */
+.emphasis-subtle {
+  font-style: italic;
+}
+
+.emphasis-medium {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.emphasis-strong {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Melhorias nos efeitos do tema cyberpunk, mais sutis */
+@keyframes subtleGlow {
+  0% { text-shadow: 0 0 2px rgba(0, 255, 255, 0.3); }
+  50% { text-shadow: 0 0 3px rgba(0, 255, 255, 0.4); }
+  100% { text-shadow: 0 0 2px rgba(0, 255, 255, 0.3); }
+}
+
+.cyberpunk-subtle-glow {
+  animation: subtleGlow 3s infinite ease-in-out;
+}
+
+
+/* Adicione estes estilos em src/components/home.css */
+
+/* Melhorias visuais para a página inicial */
+.cyberpunk-glow {
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.6) !important;
+}
+
+/* Destaque para badges e elementos de especialidades */
+.specialty-badge {
+  transition: all 0.3s ease;
+}
+
+.specialty-badge:hover {
+  transform: translateY(-2px);
+}
+
+/* Efeito de hover sutil para o botão principal */
+.main-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.main-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.main-button:hover::after {
+  left: 100%;
+}
+
+/* Elementos de fundo decorativos */
+.bg-decoration {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.1;
+  z-index: 0;
+}
+
+.bg-decoration-1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  left: -100px;
+}
+
+.bg-decoration-2 {
+  width: 200px;
+  height: 200px;
+  bottom: 10%;
+  left: 30%;
+}
+
+/* Efeito de gradiente para o tema cyberpunk */
+.cyberpunk-gradient-text {
+  background: linear-gradient(90deg, #06b6d4, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-fill-color: transparent;
+}
+
+/* Melhoria nos espaçamentos para texto */
+.bio-text {
+  max-width: 460px;
+  line-height: 1.7;
+}
+
+/* Adicione um efeito de transição suave para mudanças de tema */
+.theme-transition {
+  transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }

@@ -32,6 +32,8 @@ const TerminalContactForm = ({
   
   const inputRef = useRef(null);
   const terminalRef = useRef(null);
+  const terminalContentRef = useRef(null);
+  const terminalId = useRef('contact-terminal-' + Math.random().toString(36).substr(2, 9));
 
   const steps = [
     { field: 'name', prompt: '* name:' },
@@ -74,8 +76,8 @@ const TerminalContactForm = ({
 
   useEffect(() => {
     // Scroll to the bottom of the terminal when new content is added
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    if (terminalContentRef.current) {
+      terminalContentRef.current.scrollTop = terminalContentRef.current.scrollHeight;
     }
   }, [commandHistory]);
 
@@ -280,29 +282,15 @@ const TerminalContactForm = ({
     }, 100);
   };
 
-  // Determine main container classes based on button type and terminal state
-  const getContainerClasses = () => {
-    if (terminalOpen) {
-      return 'z-50';
-    }
-    
-    if (buttonType === 'icon') {
-      const positionClasses = {
-        'bottom-right': 'fixed bottom-8 right-8',
-        'bottom-left': 'fixed bottom-8 left-8',
-        'bottom-center': 'fixed bottom-8 left-1/2 transform -translate-x-1/2'
-      };
-      return `${positionClasses[position] || 'fixed bottom-8 right-8'} z-50`;
-    }
-    
-    // For text button, don't use fixed positioning
-    return `${className}`;
+  // Minimize the terminal (added for compatibility with SharedTerminal)
+  const minimizeTerminal = () => {
+    setTerminalOpen(false);
   };
 
   // Render terminal content
   const renderTerminalContent = () => {
     return (
-      <>
+      <div ref={terminalContentRef} className="terminal-content h-full overflow-y-auto">
         {/* Command History */}
         <div className="p-2 text-left">
           {commandHistory.map((item, index) => (
@@ -354,16 +342,16 @@ const TerminalContactForm = ({
             </div>
           </div>
         )}
-      </>
+      </div>
     );
   };
 
   return (
-    <div className={`contact-terminal-widget ${getContainerClasses()}`}>
+    <div className={`contact-terminal-widget ${className}`}>
       {/* Button */}
       {buttonType === 'icon' ? (
         <button 
-          className={`bg-gray-800 text-green-400 p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all ${terminalOpen ? 'hidden' : ''}`}
+          className={`bg-gray-800 text-green-400 p-3 rounded-full shadow-lg hover:bg-gray-700 transition-all`}
           onClick={openTerminal}
           aria-label="Open contact terminal"
         >
@@ -379,14 +367,18 @@ const TerminalContactForm = ({
         </button>
       )}
 
-      {/* Terminal using updated Shared Component with bottom position */}
+      {/* Terminal using SharedTerminal component */}
       <SharedTerminal
+        id={terminalId.current}
         isOpen={terminalOpen}
+        isMinimized={false}
         onClose={closeTerminal}
+        onMinimize={minimizeTerminal}
+        onRestore={() => setTerminalOpen(true)}
         terminalType="bottom"
         title="Contact Form"
         command="./contact-form.sh --interactive"
-        contentRef={terminalRef}
+        zIndex={1000}
       >
         {renderTerminalContent()}
       </SharedTerminal>
