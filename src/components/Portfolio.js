@@ -205,7 +205,7 @@ const Portfolio = () => {
   <div className={`flex h-full ${colors.bg} ${colors.text}`} style={{ height: "calc(100% - 64px)" }}>
     {/* Lado esquerdo - Apresentação do desenvolvedor com textos CENTRALIZADOS */}
     <div className="w-1/2 flex flex-col justify-center items-center px-8 py-8 relative">
-      <div className="relative z-10 max-w-xl text-center">
+      <div className="relative z-10  text-center">
         {/* Badge para theme cyberpunk */}
         {theme === "cyberpunk" && (
           <div className="inline-block px-3 py-1 mb-6 border border-pink-500 text-cyan-300 text-sm font-medium tracking-wider">
@@ -268,7 +268,7 @@ const Portfolio = () => {
         </div>
 
         {/* Bio - centralizada */}
-        <div className={`space-y-4 mb-8 max-w-md mx-auto ${
+        <div className={`space-y-4 mb-8 mx-auto ${
           theme === "cyberpunk" ? "text-gray-300" : theme === "black" ? "text-gray-300" : "text-gray-600"
         }`}>
           <p className="text-lg leading-relaxed">
@@ -281,19 +281,6 @@ const Portfolio = () => {
             Recentemente, expandindo horizontes no desenvolvimento de jogos e aplicações interativas.
           </p>
         </div>
-
-        {/* Botão de contato */}
-        <button 
-          className={`mt-2 py-3 px-8 rounded-md font-medium text-lg transition-all duration-300 transform hover:scale-105 ${
-            theme === "cyberpunk" 
-              ? "bg-pink-600 text-cyan-300 hover:bg-pink-700 shadow-lg shadow-pink-900/50" 
-              : theme === "black"
-                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-900/30" 
-                : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-300/30"
-          }`}
-        >
-          Vamos conversar
-        </button>
       </div>
       
       {/* Elementos decorativos de fundo - visíveis apenas em temas não-white */}
@@ -359,14 +346,8 @@ const Portfolio = () => {
                     ? "border border-gray-500 text-gray-300"
                     : "border border-gray-400 text-gray-600"
               }`}>
-                SHALL WE PLAY A GAME?
+                Wanna play?
               </div>
-              
-              <p className={`mt-4 text-xs ${
-                theme === "cyberpunk" ? "text-pink-300" : "text-gray-500"
-              }`}>
-                Click to expand
-              </p>
             </div>
           </div>
         </div>
@@ -394,16 +375,11 @@ const Portfolio = () => {
           
           {/* Gaming header */}
           <div className="text-center pt-6 pb-2">
-            <h3 className={`text-xl md:text-2xl font-bold mb-1 ${
+            <h3 className={`text-xl md:text-2xl font-extrabold  mb-1 ${
               theme === "cyberpunk" ? "text-cyan-300 cyberpunk-glow" : ""
             }`}>
               Play Battleship
             </h3>
-            <p className={`text-sm md:text-base ${
-              theme === "cyberpunk" ? "text-pink-300" : "text-gray-400"
-            } mb-3`}>
-              Try your luck against the computer - can you sink all the ships?
-            </p>
           </div>
 
           {/* Game Container - Full Height */}

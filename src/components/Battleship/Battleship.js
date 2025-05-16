@@ -1,21 +1,18 @@
-// src/components/Battleship/Battleship.js - Versão completa com modo de jogo
+// src/components/Battleship/Battleship.js - Enhanced with offline mode
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, X, Check, Terminal, Server, Database } from 'lucide-react';
 
 import './style.css';
 
 function Battleship({ theme = 'black', isExpanded = false }) {
-  // Estados para controle de modo de jogo
-  const [gameMode, setGameMode] = useState(null); // 'online' ou 'computer'
+  // Game mode states
+  const [gameMode, setGameMode] = useState(null); // 'online' or 'computer'
   const [modeSelectionVisible, setModeSelectionVisible] = useState(true);
   
-  // Usar isExpanded para ajustar comportamentos visuais se necessário
+  // Use isExpanded to adjust visual behaviors if needed
   useEffect(() => {
-    // Se o componente estiver sendo usado em modo expandido no portfólio,
-    // podemos ajustar alguns comportamentos visuais específicos aqui
     if (isExpanded) {
-      // Por exemplo, podemos garantir que a animação de abertura seja mais suave
-      // ou ajustar tamanhos específicos para o layout expandido
+      // Optional adjustments for expanded view
     }
   }, [isExpanded]);
   
@@ -78,17 +75,17 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       case 'black':
       default:
         return {
-          bg: 'bg-gray-900',             // Mais escuro, mas não preto puro
-          text: 'text-gray-200',         // Texto cinza claro em vez de verde
-          secondaryText: 'text-gray-400',// Texto secundário mais suave
-          border: 'border-gray-700',     // Bordas mais suaves
-          primaryBg: 'bg-gray-800',      // Fundo primário mais claro
-          secondaryBg: 'bg-gray-700',    // Fundo secundário mais claro
-          cellWater: 'bg-gray-700 hover:bg-gray-600', // Células de água mais suaves
-          cellShip: 'bg-gray-500',       // Navios em cinza médio
-          cellHit: 'bg-red-800',         // Hits em vermelho mais escuro
-          cellMiss: 'bg-blue-900',       // Misses em azul mais escuro
-          cellScan: 'bg-yellow-900',     // Scan em amarelo mais escuro
+          bg: 'bg-gray-900',             // Darker, but not pure black
+          text: 'text-gray-200',         // Light gray text instead of green
+          secondaryText: 'text-gray-400',// Softer secondary text
+          border: 'border-gray-700',     // Softer borders
+          primaryBg: 'bg-gray-800',      // Lighter primary background
+          secondaryBg: 'bg-gray-700',    // Lighter secondary background
+          cellWater: 'bg-gray-700 hover:bg-gray-600', // Softer water cells
+          cellShip: 'bg-gray-500',       // Ships in medium gray
+          cellHit: 'bg-red-800',         // Hits in darker red
+          cellMiss: 'bg-blue-900',       // Misses in darker blue
+          cellScan: 'bg-yellow-900',     // Scan in darker yellow
           button: 'bg-gray-700 text-gray-200 hover:bg-gray-600 border border-gray-600',
           buttonSecondary: 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700',
           buttonSelected: 'bg-blue-800 text-white border border-blue-700',
@@ -99,9 +96,9 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           success: 'bg-gray-800 text-blue-400 border border-blue-800',
           error: 'bg-gray-800 text-red-400 border border-red-800',
           info: 'bg-gray-800 text-blue-400 border border-blue-800',
-          accent: 'text-blue-400',      // Cor de destaque azul em vez de verde
-          scanlines: 'terminal-scanlines-subtle', // Scanlines mais sutis
-          glitch: 'terminal-glitch-subtle',      // Efeito glitch mais sutil
+          accent: 'text-blue-400',      // Blue accent color instead of green
+          scanlines: 'terminal-scanlines-subtle', // Subtler scanlines
+          glitch: 'terminal-glitch-subtle',      // Subtler glitch effect
         };
     }
   };
@@ -142,9 +139,49 @@ function Battleship({ theme = 'black', isExpanded = false }) {
   const [selectedAbility, setSelectedAbility] = useState(null);
   const [multiShotPositions, setMultiShotPositions] = useState([]);
   
+  // Offline mode specific states
+  const [computerBoard, setComputerBoard] = useState([]);
+  const [computerShips, setComputerShips] = useState({});
+  const [computerShots, setComputerShots] = useState([]);
+  const [isComputerThinking, setIsComputerThinking] = useState(false);
+  const [difficulty, setDifficulty] = useState('normal'); // 'easy', 'normal', 'hard'
+  const [gameWinner, setGameWinner] = useState(null); // 'player', 'computer', null
+  
   // UseRef to ensure we only create one connection
   const socketRef = useRef(null);
   const reconnectingRef = useRef(false);
+  const computerThinkingTimeoutRef = useRef(null);
+
+  // Default ship configuration
+  const defaultShips = {
+    battleship: { size: 4, count: 1 },
+    cruiser: { size: 3, count: 2 },
+    destroyer: { size: 2, count: 3 },
+    submarine: { size: 1, count: 4 }
+  };
+
+  // Default special abilities
+  const defaultSpecialAbilities = {
+    scan: { 
+      name: "Radar Scan", 
+      description: "Reveals a 3x3 area on the opponent's board" 
+    },
+    multiShot: { 
+      name: "Triple Shot", 
+      description: "Fire 3 shots in a row" 
+    },
+    bomb: { 
+      name: "Bomb Strike", 
+      description: "Attack a 2x2 area" 
+    }
+  };
+
+  // Default abilities count
+  const defaultAbilities = {
+    scan: 1,
+    multiShot: 1,
+    bomb: 1
+  };
   
   // Function to add debug messages
   const addDebug = (message) => {
@@ -157,7 +194,17 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     });
   };
 
-  // Function to create WebSocket connection
+  // Initialize empty boards
+  useEffect(() => {
+    if (boardSize > 0) {
+      const emptyBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+      setYourBoard(emptyBoard);
+      setOpponentBoard(emptyBoard);
+      setComputerBoard(emptyBoard);
+    }
+  }, [boardSize]);
+
+  // Function to create WebSocket connection for online mode
   const createWebSocketConnection = useCallback(() => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       addDebug("Existing WebSocket connection detected. Continuing.");
@@ -172,20 +219,12 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     reconnectingRef.current = true;
     addDebug("Initializing WebSocket connection...");
 
-    // SEMPRE use wss:// para conexões seguras
-    // URLs diferentes dependendo do modo de jogo
+    // Always use wss:// for secure connections
+    // Different URLs depending on game mode
     let wsUrl = 'wss://server-websockets.onrender.com';
     
-    // Para desenvolvimento local
+    // For local development
     // const wsUrl = 'ws://localhost:8080';
-    
-    // Se estiver no modo online, poderia usar uma URL diferente (opcional)
-    if (gameMode === 'online') {
-      // Versão futura: wsUrl = 'wss://multiplayer-server.onrender.com';
-      addDebug('Conectando ao servidor multiplayer...');
-    } else {
-      addDebug('Conectando ao servidor de IA...');
-    }
     
     addDebug(`Connecting to ${wsUrl}`);
     
@@ -202,10 +241,10 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       
       // Request room list when connected
       setTimeout(() => {
-        // Adicione o modo de jogo ao solicitar salas
+        // Add game mode when requesting rooms
         sendMessageWithSocket(newSocket, { 
           type: 'get_rooms',
-          gameMode: gameMode // Permite ao servidor filtrar salas pelo modo
+          gameMode: gameMode // Allows server to filter rooms by mode
         });
       }, 500);
     };
@@ -242,27 +281,304 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     setSocket(newSocket);
   }, [gameMode]);
 
-  // Função para selecionar o modo de jogo
+  // Function to select game mode
   const selectGameMode = (mode) => {
     setGameMode(mode);
     setModeSelectionVisible(false);
     
     if (mode === 'computer') {
-      // Iniciar jogo contra o computador - usar lógica existente
-      createWebSocketConnection();
+      // Start offline game against the computer
+      startOfflineGame();
     } else if (mode === 'online') {
-      // Iniciar jogo online - conexão direta ao servidor multiplayer
+      // Start online game - connect to multiplayer server
       createWebSocketConnection();
-      // Aqui você poderia ter uma lógica diferente para jogos online
-      addDebug("Modo multiplayer iniciado - buscando oponentes");
+      addDebug("Multiplayer mode started - looking for opponents");
     }
   };
   
-  // Função para voltar à seleção de modo
+  // Function to play against computer
+  const startOfflineGame = () => {
+    addDebug("Starting offline game against computer");
+    
+    // Reset states
+    const emptyBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+    setYourBoard(emptyBoard);
+    setOpponentBoard(emptyBoard);
+    setComputerBoard(emptyBoard);
+    setYourShips({});
+    setComputerShips({});
+    setShots([]);
+    setComputerShots([]);
+    setGameWinner(null);
+    
+    // Clear any computer thinking timeout
+    if (computerThinkingTimeoutRef.current) {
+      clearTimeout(computerThinkingTimeoutRef.current);
+      computerThinkingTimeoutRef.current = null;
+    }
+    
+    // Set default ships to place - standard battleship configuration
+    setShipsToPlace({
+      battleship: { size: 4, count: 1 },
+      cruiser: { size: 3, count: 2 },
+      destroyer: { size: 2, count: 3 },
+      submarine: { size: 1, count: 4 }
+    });
+    
+    // Set default abilities
+    setAbilities({
+      scan: 1,
+      multiShot: 1,
+      bomb: 1
+    });
+    
+    setSpecialAbilities({
+      scan: { 
+        name: "Radar Scan", 
+        description: "Reveals a 3x3 area on the opponent's board" 
+      },
+      multiShot: { 
+        name: "Triple Shot", 
+        description: "Fire 3 shots in a row" 
+      },
+      bomb: { 
+        name: "Bomb Strike", 
+        description: "Attack a 2x2 area" 
+      }
+    });
+    
+    // Move to setup phase
+    setGameState('setup');
+    addDebug("Game initialized - place your ships");
+  };
+  
+  // Computer AI for offline mode - Place ships randomly
+  const placeComputerShips = () => {
+    const board = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
+    const ships = {};
+    
+    // For each ship type in shipsToPlace
+    Object.entries(shipsToPlace).forEach(([shipType, shipInfo]) => {
+      const { size, count } = shipInfo;
+      
+      // Initialize ship array for this type
+      ships[shipType] = [];
+      
+      // Place each ship of this type
+      for (let i = 0; i < count; i++) {
+        let placed = false;
+        
+        // Try to place the ship until successful
+        while (!placed) {
+          // Randomly choose orientation
+          const orientation = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+          
+          // Random starting position based on orientation
+          const maxX = orientation === 'horizontal' ? boardSize - size : boardSize - 1;
+          const maxY = orientation === 'vertical' ? boardSize - size : boardSize - 1;
+          
+          const x = Math.floor(Math.random() * (maxX + 1));
+          const y = Math.floor(Math.random() * (maxY + 1));
+          
+          // Check if this position is valid (no overlap with other ships)
+          let isValid = true;
+          const positions = [];
+          
+          for (let j = 0; j < size; j++) {
+            const posX = orientation === 'horizontal' ? x + j : x;
+            const posY = orientation === 'vertical' ? y + j : y;
+            
+            // Check if this position is already occupied
+            if (board[posY][posX] !== null) {
+              isValid = false;
+              break;
+            }
+            
+            positions.push({ x: posX, y: posY });
+          }
+          
+          if (isValid) {
+            // Mark positions on the board and add to ships
+            positions.forEach(pos => {
+              board[pos.y][pos.x] = shipType;
+            });
+            
+            ships[shipType].push({ positions });
+            placed = true;
+          }
+        }
+      }
+    });
+    
+    setComputerBoard(board);
+    setComputerShips(ships);
+    addDebug("Computer ships placed");
+  };
+  
+  // Computer AI for making moves in offline mode
+  const computerMove = () => {
+    if (!yourTurn && gameState === 'playing' && gameMode === 'computer') {
+      setIsComputerThinking(true);
+      
+      // Clear any existing timeout
+      if (computerThinkingTimeoutRef.current) {
+        clearTimeout(computerThinkingTimeoutRef.current);
+      }
+      
+      // Set a delay to simulate computer thinking
+      computerThinkingTimeoutRef.current = setTimeout(() => {
+        // Basic AI logic - can be improved based on difficulty
+        let targetX, targetY;
+        let validMove = false;
+        
+        if (difficulty === 'hard') {
+          // Advanced AI logic - target hits and surrounding cells
+          const lastHit = computerShots.findLast(shot => shot.hit && !shot.sunk);
+          
+          if (lastHit) {
+            // Try adjacent cells around last hit
+            const adjacentCells = [
+              { x: lastHit.x + 1, y: lastHit.y },
+              { x: lastHit.x - 1, y: lastHit.y },
+              { x: lastHit.x, y: lastHit.y + 1 },
+              { x: lastHit.x, y: lastHit.y - 1 }
+            ].filter(cell => 
+              cell.x >= 0 && cell.x < boardSize && 
+              cell.y >= 0 && cell.y < boardSize &&
+              !computerShots.some(shot => shot.x === cell.x && shot.y === cell.y)
+            );
+            
+            if (adjacentCells.length > 0) {
+              const randomIndex = Math.floor(Math.random() * adjacentCells.length);
+              targetX = adjacentCells[randomIndex].x;
+              targetY = adjacentCells[randomIndex].y;
+              validMove = true;
+            }
+          }
+        }
+        
+        // If no valid move found yet, choose randomly
+        if (!validMove) {
+          // Find all cells that haven't been shot at yet
+          const availableCells = [];
+          
+          for (let y = 0; y < boardSize; y++) {
+            for (let x = 0; x < boardSize; x++) {
+              if (!computerShots.some(shot => shot.x === x && shot.y === y)) {
+                availableCells.push({ x, y });
+              }
+            }
+          }
+          
+          if (availableCells.length > 0) {
+            const randomIndex = Math.floor(Math.random() * availableCells.length);
+            targetX = availableCells[randomIndex].x;
+            targetY = availableCells[randomIndex].y;
+          } else {
+            // No available cells (shouldn't happen unless game is over)
+            setIsComputerThinking(false);
+            return;
+          }
+        }
+        
+        // Determine hit or miss
+        const cellValue = yourBoard[targetY][targetX];
+        const hit = cellValue !== null && cellValue !== 'hit' && cellValue !== 'miss';
+        
+        // Update the board
+        const newBoard = [...yourBoard.map(row => [...row])];
+        newBoard[targetY][targetX] = hit ? 'hit' : 'miss';
+        setYourBoard(newBoard);
+        
+        // Check if a ship is sunk
+        let shipType = null;
+        let sunk = false;
+        
+        if (hit) {
+          shipType = cellValue;
+          
+          // Check if the ship is sunk
+          if (yourShips[shipType]) {
+            for (const ship of yourShips[shipType]) {
+              const isSunk = ship.positions.every(pos => {
+                // Check if all positions of this ship have been hit
+                return newBoard[pos.y][pos.x] === 'hit';
+              });
+              
+              if (isSunk) {
+                sunk = true;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Record the shot
+        const shot = {
+          x: targetX,
+          y: targetY,
+          hit,
+          shipType,
+          sunk
+        };
+        
+        setComputerShots(prev => [...prev, shot]);
+        
+        // Show the result to the player
+        setLastShotResult({
+          position: { x: targetX, y: targetY },
+          hit,
+          shipType: hit ? shipType : null,
+          sunk
+        });
+        
+        // Check if game is over (all player ships sunk)
+        const allPlayerShipsSunk = checkAllShipsSunk(yourShips, newBoard);
+        
+        if (allPlayerShipsSunk) {
+          setGameWinner('computer');
+          setGameState('gameover');
+          // Reveal computer ships on game over
+          setOpponentBoard(computerBoard);
+          setOpponentShips(computerShips);
+        } else {
+          // Switch turn back to player
+          setYourTurn(true);
+        }
+        
+        setIsComputerThinking(false);
+      }, 1000); // 1 second thinking time
+    }
+  };
+  
+  // Helper function to check if all ships are sunk
+  const checkAllShipsSunk = (ships, board) => {
+    for (const shipType in ships) {
+      for (const ship of ships[shipType]) {
+        const allPositionsHit = ship.positions.every(pos => 
+          board[pos.y][pos.x] === 'hit'
+        );
+        
+        if (!allPositionsHit) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+  
+  // Effect to handle computer moves
+  useEffect(() => {
+    if (gameMode === 'computer' && gameState === 'playing' && !yourTurn && !isComputerThinking) {
+      computerMove();
+    }
+  }, [gameMode, gameState, yourTurn, isComputerThinking]);
+  
+  // Function to go back to mode selection
   const backToModeSelection = () => {
-    // Se o jogo já estiver em andamento, confirmar antes de sair
+    // If game is already in progress, confirm before exiting
     if (gameState !== 'initial') {
-      if (window.confirm('Sair do jogo atual e voltar à seleção de modo?')) {
+      if (window.confirm('Exit current game and return to mode selection?')) {
         resetGame();
         setModeSelectionVisible(true);
         setGameMode(null);
@@ -273,31 +589,41 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     }
   };
   
-  // Função para resetar o jogo
+  // Function to reset the game
   const resetGame = () => {
-    // Resetar estados importantes
+    // Reset important states
     setGameState('initial');
     setRoomId('');
     setRoomName('');
     
-    // Limpar o tabuleiro, navios, etc.
+    // Clear the board, ships, etc.
     const emptyBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
     setYourBoard(emptyBoard);
     setOpponentBoard(emptyBoard);
+    setComputerBoard(emptyBoard);
     setYourShips({});
     setOpponentShips({});
+    setComputerShips({});
     setShots([]);
+    setComputerShots([]);
+    setGameWinner(null);
     
-    // Se havia conexão WebSocket, fechar
+    // Clear any computer thinking timeout
+    if (computerThinkingTimeoutRef.current) {
+      clearTimeout(computerThinkingTimeoutRef.current);
+      computerThinkingTimeoutRef.current = null;
+    }
+    
+    // If there was a WebSocket connection, close it
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.close();
     }
     socketRef.current = null;
   };
 
-  // New function to start the game when the button is clicked
+  // Function to start the game when the button is clicked
   const startGame = () => {
-    // Ao invés de iniciar o jogo diretamente, mostrar a seleção de modo
+    // Show mode selection instead of starting the game directly
     setModeSelectionVisible(true);
   };
 
@@ -327,16 +653,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     }
   };
 
-  // Initialize empty boards
-  useEffect(() => {
-    if (boardSize > 0) {
-      const emptyBoard = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
-      setYourBoard(emptyBoard);
-      setOpponentBoard(emptyBoard);
-    }
-  }, [boardSize]);
-
-  // Function to handle received messages
+  // Function to handle received messages from server (online mode)
   const handleMessage = useCallback((message) => {
     // Clear error messages
     setError('');
@@ -409,6 +726,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         setYourTurn(message.yourTurn);
         
         if (message.gameOver) {
+          setGameWinner('player');
+          setGameState('gameover');
           addDebug(`Game over. You won!`);
         }
         break;
@@ -418,6 +737,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         setYourTurn(message.yourTurn);
         
         if (message.gameOver) {
+          setGameWinner('computer');
+          setGameState('gameover');
           addDebug(`Game over. You lost!`);
         }
         break;
@@ -435,6 +756,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         }
         
         if (message.gameOver) {
+          setGameWinner('player');
+          setGameState('gameover');
           addDebug(`Game over. You won!`);
         }
         break;
@@ -444,6 +767,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         setYourTurn(message.yourTurn);
         
         if (message.gameOver) {
+          setGameWinner('computer');
+          setGameState('gameover');
           addDebug(`Game over. You lost!`);
         }
         break;
@@ -451,6 +776,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       case 'game_over':
         setGameState('gameover');
         setOpponentShips(message.opponentShips);
+        setGameWinner(message.winner ? 'player' : 'computer');
         addDebug(`Game over. Result: ${message.winner ? 'Victory' : 'Defeat'}`);
         break;
         
@@ -473,7 +799,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     }
   }, [abilities]);
 
-  // Function to handle shot result
+  // Function to handle shot result in online mode
   const handleShotResult = (result) => {
     setLastShotResult(result);
     
@@ -485,12 +811,30 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     });
     
     // Add to shot list
-    setShots(prev => [...prev, { ...result.position, hit: result.hit, shipType: result.shipType }]);
+    setShots(prev => [...prev, { ...result.position, hit: result.hit, shipType: result.shipType, sunk: result.sunk }]);
     
     addDebug(`Shot at (${result.position.x}, ${result.position.y}): ${result.hit ? 'Hit' : 'Miss'} ${result.sunk ? `and sunk a ${result.shipType}` : ''}`);
+    
+    // If in computer mode, check if all ships are sunk
+    if (gameMode === 'computer' && result.hit) {
+      // Update computerBoard to reflect the hit
+      setComputerBoard(prevBoard => {
+        const newBoard = [...prevBoard.map(row => [...row])];
+        // We already know it's a hit from result.hit
+        return newBoard;
+      });
+      
+      // Check if all computer ships are sunk
+      const allComputerShipsSunk = checkAllShipsSunk(computerShips, opponentBoard);
+      
+      if (allComputerShipsSunk) {
+        setGameWinner('player');
+        setGameState('gameover');
+      }
+    }
   };
   
-  // Function to handle opponent's shot
+  // Function to handle opponent's shot in online mode
   const handleOpponentShot = (result) => {
     // Update your board
     setYourBoard(prevBoard => {
@@ -530,6 +874,25 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     setMultiShotPositions([]);
     
     addDebug(`Ability ${abilityType} used with ${results.length} results`);
+    
+    // For offline mode, update computer board if needed
+    if (gameMode === 'computer') {
+      if (abilityType !== 'scan') {
+        // Check if all computer ships are sunk after using ability
+        const allComputerShipsSunk = checkAllShipsSunk(computerShips, opponentBoard);
+        
+        if (allComputerShipsSunk) {
+          setGameWinner('player');
+          setGameState('gameover');
+        } else {
+          // Switch turn to computer
+          setYourTurn(false);
+        }
+      } else {
+        // Scanning doesn't end turn
+        setYourTurn(true);
+      }
+    }
   };
   
   // Function to handle opponent's special ability
@@ -548,9 +911,22 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     });
     
     addDebug(`Opponent used ability ${abilityType}`);
+    
+    // For offline mode, check if all player ships are sunk
+    if (gameMode === 'computer' && abilityType !== 'scan') {
+      const allPlayerShipsSunk = checkAllShipsSunk(yourShips, yourBoard);
+      
+      if (allPlayerShipsSunk) {
+        setGameWinner('computer');
+        setGameState('gameover');
+      } else {
+        // Switch turn back to player
+        setYourTurn(true);
+      }
+    }
   };
 
-  // Function to create a new room
+  // Function to create a new room (online mode)
   const createRoom = () => {
     // Validate room name
     const roomName = newRoomName.trim() || `Server-${playerId.substring(0, 5)}`;
@@ -558,14 +934,14 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     sendMessage({
       type: 'create_room',
       roomName: roomName,
-      gameMode: gameMode // Adicionar o modo de jogo para o servidor saber
+      gameMode: gameMode // Add game mode for server to know
     });
     
     addDebug(`Requesting room creation: ${roomName} (Mode: ${gameMode})`);
     setNewRoomName('');
   };
 
-  // Function to join a room
+  // Function to join a room (online mode)
   const joinRoom = (roomId) => {
     sendMessage({
       type: 'join_room',
@@ -575,24 +951,29 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     addDebug(`Requesting to join room: ${roomId}`);
   };
 
-  // Function to leave current room
+  // Function to leave current room/game
   const leaveRoom = () => {
-    sendMessage({
-      type: 'leave_room'
-    });
-    
-    setRoomId('');
-    setRoomName('');
-    setGameState('lobby');
-    
-    addDebug('Leaving room');
+    if (gameMode === 'online' && socket) {
+      sendMessage({
+        type: 'leave_room'
+      });
+      
+      setRoomId('');
+      setRoomName('');
+      setGameState('lobby');
+      
+      addDebug('Leaving room');
+    } else {
+      // For offline mode, just go back to mode selection
+      backToModeSelection();
+    }
   };
 
-  // Function to refresh room list
+  // Function to refresh room list (online mode)
   const refreshRooms = () => {
     sendMessage({
       type: 'get_rooms',
-      gameMode: gameMode // Incluir modo para filtrar as salas
+      gameMode: gameMode // Include mode to filter rooms
     });
     
     addDebug('Requesting room list');
@@ -693,7 +1074,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     addDebug(`Initial position selected: (${x}, ${y})`);
   };
 
-  // Function to send ship placement to server
+  // Function to confirm ship placement
   const confirmShipPlacement = () => {
     // Check if all ships are placed
     for (const [shipType, shipInfo] of Object.entries(shipsToPlace)) {
@@ -703,12 +1084,28 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       }
     }
     
-    sendMessage({
-      type: 'place_ships',
-      ships: yourShips
-    });
-    
-    addDebug('Sending ship placement to server');
+    if (gameMode === 'online') {
+      // Online mode - send ship placement to server
+      sendMessage({
+        type: 'place_ships',
+        ships: yourShips
+      });
+      
+      addDebug('Sending ship placement to server');
+    } else {
+      // Offline mode - place computer ships and start the game
+      placeComputerShips();
+      
+      // Set abilities
+      setAbilities({...defaultAbilities});
+      setSpecialAbilities({...defaultSpecialAbilities});
+      
+      // Start the game
+      setGameState('playing');
+      setYourTurn(true); // Player goes first in offline mode
+      
+      addDebug('Ship placement confirmed, starting offline game');
+    }
   };
 
   // Function to fire at opponent's board
@@ -729,10 +1126,91 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       return;
     }
     
-    sendMessage({
-      type: 'fire_shot',
-      position: { x, y }
-    });
+    if (gameMode === 'online') {
+      // Online mode - send shot to server
+      sendMessage({
+        type: 'fire_shot',
+        position: { x, y }
+      });
+    } else {
+      // Offline mode - process shot locally
+      const hit = computerBoard[y][x] !== null && computerBoard[y][x] !== 'hit' && computerBoard[y][x] !== 'miss';
+      const shipType = hit ? computerBoard[y][x] : null;
+      
+      // Update opponent's board (which represents computer's board in offline mode)
+      setOpponentBoard(prevBoard => {
+        const newBoard = [...prevBoard.map(row => [...row])];
+        newBoard[y][x] = hit ? 'hit' : 'miss';
+        return newBoard;
+      });
+      
+      // Check if a ship is sunk
+      let sunk = false;
+      
+      if (hit && computerShips[shipType]) {
+        // Find the ship that was hit
+        for (const ship of computerShips[shipType]) {
+          // Check if this particular ship contains the hit position
+          const hitPosition = ship.positions.find(pos => pos.x === x && pos.y === y);
+          
+          if (hitPosition) {
+            // Check if all positions of this ship have been hit
+            const allPositionsHit = ship.positions.every(pos => 
+              opponentBoard[pos.y][pos.x] === 'hit' || // Already hit in previous shots
+              (pos.x === x && pos.y === y) // Just hit in this shot
+            );
+            
+            if (allPositionsHit) {
+              sunk = true;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Record the shot
+      const shot = { x, y, hit, shipType, sunk };
+      setShots(prev => [...prev, shot]);
+      
+      // Set last shot result for display
+      setLastShotResult({
+        position: { x, y },
+        hit,
+        shipType,
+        sunk
+      });
+      
+      // Check if all computer ships are sunk
+      let allShipsSunk = true;
+      
+      for (const shipType in computerShips) {
+        for (const ship of computerShips[shipType]) {
+          const allPositionsHit = ship.positions.every(pos => 
+            opponentBoard[pos.y][pos.x] === 'hit' || // Hit in previous shots
+            (pos.x === x && pos.y === y && hit) // Just hit in this shot
+          );
+          
+          if (!allPositionsHit) {
+            allShipsSunk = false;
+            break;
+          }
+        }
+        
+        if (!allShipsSunk) {
+          break;
+        }
+      }
+      
+      if (allShipsSunk) {
+        // Game over - player wins
+        setGameWinner('player');
+        setGameState('gameover');
+        addDebug('Game over - You won!');
+      } else {
+        // Switch turn to computer
+        setYourTurn(false);
+      }
+    }
     
     addDebug(`Firing at (${x}, ${y})`);
   };
@@ -753,79 +1231,241 @@ function Battleship({ theme = 'black', isExpanded = false }) {
   const handleSpecialAbility = (x, y) => {
     if (!selectedAbility) return;
     
-    switch (selectedAbility) {
-      case 'scan':
-        // Scan reveals a 3x3 area
-        sendMessage({
-          type: 'use_special',
-          ability: {
-            type: 'scan',
-            position: { x, y }
-          }
-        });
-        break;
-        
-      case 'multiShot':
-        // MultiShot allows selecting 3 positions in a line
-        if (multiShotPositions.length < 2) {
-          // Add position to list
-          setMultiShotPositions(prev => [...prev, { x, y }]);
+    if (gameMode === 'online') {
+      // Online mode - send ability use to server
+      switch (selectedAbility) {
+        case 'scan':
+          // Scan reveals a 3x3 area
+          sendMessage({
+            type: 'use_special',
+            ability: {
+              type: 'scan',
+              position: { x, y }
+            }
+          });
+          break;
           
-          if (multiShotPositions.length === 1) {
-            // Check if 3 positions are in a line
-            const pos0 = multiShotPositions[0];
+        case 'multiShot':
+          // MultiShot allows selecting 3 positions in a line
+          if (multiShotPositions.length < 2) {
+            // Add position to list
+            setMultiShotPositions(prev => [...prev, { x, y }]);
             
-            if (pos0.x === x && Math.abs(pos0.y - y) === 1) {
-              // Vertical line
-              const y3 = y + (y - pos0.y);
-              if (y3 >= 0 && y3 < boardSize) {
-                sendMessage({
-                  type: 'use_special',
-                  ability: {
-                    type: 'multiShot',
-                    positions: [pos0, { x, y }, { x, y: y3 }]
-                  }
-                });
-                setMultiShotPositions([]);
+            if (multiShotPositions.length === 1) {
+              // Check if 3 positions are in a line
+              const pos0 = multiShotPositions[0];
+              
+              if (pos0.x === x && Math.abs(pos0.y - y) === 1) {
+                // Vertical line
+                const y3 = y + (y - pos0.y);
+                if (y3 >= 0 && y3 < boardSize) {
+                  sendMessage({
+                    type: 'use_special',
+                    ability: {
+                      type: 'multiShot',
+                      positions: [pos0, { x, y }, { x, y: y3 }]
+                    }
+                  });
+                  setMultiShotPositions([]);
+                } else {
+                  setError('Third position outside grid bounds');
+                }
+              } else if (pos0.y === y && Math.abs(pos0.x - x) === 1) {
+                // Horizontal line
+                const x3 = x + (x - pos0.x);
+                if (x3 >= 0 && x3 < boardSize) {
+                  sendMessage({
+                    type: 'use_special',
+                    ability: {
+                      type: 'multiShot',
+                      positions: [pos0, { x, y }, { x: x3, y }]
+                    }
+                  });
+                  setMultiShotPositions([]);
+                } else {
+                  setError('Third position outside grid bounds');
+                }
               } else {
-                setError('Third position outside grid bounds');
-              }
-            } else if (pos0.y === y && Math.abs(pos0.x - x) === 1) {
-              // Horizontal line
-              const x3 = x + (x - pos0.x);
-              if (x3 >= 0 && x3 < boardSize) {
-                sendMessage({
-                  type: 'use_special',
-                  ability: {
-                    type: 'multiShot',
-                    positions: [pos0, { x, y }, { x: x3, y }]
-                  }
-                });
+                setError('Positions must be adjacent and in line');
                 setMultiShotPositions([]);
-              } else {
-                setError('Third position outside grid bounds');
               }
-            } else {
-              setError('Positions must be adjacent and in line');
-              setMultiShotPositions([]);
             }
           }
-        }
-        break;
-        
-      case 'bomb':
-        // Bomb attacks a 2x2 area
-        sendMessage({
-          type: 'use_special',
-          ability: {
-            type: 'bomb',
-            position: { x, y }
+          break;
+          
+        case 'bomb':
+          // Bomb attacks a 2x2 area
+          sendMessage({
+            type: 'use_special',
+            ability: {
+              type: 'bomb',
+              position: { x, y }
+            }
+          });
+          break;
+          
+        default:
+          setError(`Ability ${selectedAbility} not implemented`);
+      }
+    } else {
+      // Offline mode - process ability use locally
+      let results = [];
+      
+      switch (selectedAbility) {
+        case 'scan':
+          // Scan reveals a 3x3 area
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              const scanX = x + dx;
+              const scanY = y + dy;
+              
+              // Skip if outside the board
+              if (scanX < 0 || scanX >= boardSize || scanY < 0 || scanY >= boardSize) {
+                continue;
+              }
+              
+              // Check if there's a ship at this position
+              const hasShip = computerBoard[scanY][scanX] !== null &&
+                             computerBoard[scanY][scanX] !== 'hit' &&
+                             computerBoard[scanY][scanX] !== 'miss';
+              
+              results.push({
+                position: { x: scanX, y: scanY },
+                hasShip
+              });
+            }
           }
-        });
-        break;
-        
-      default:
-        setError(`Ability ${selectedAbility} not implemented`);
+          
+          // Update the board with scan results
+          handleAbilityResult(results, 'scan');
+          break;
+          
+        case 'multiShot':
+          // MultiShot allows selecting 3 positions in a line
+          if (multiShotPositions.length < 2) {
+            // Add position to list
+            setMultiShotPositions(prev => [...prev, { x, y }]);
+            
+            if (multiShotPositions.length === 1) {
+              // Check if 3 positions are in a line
+              const pos0 = multiShotPositions[0];
+              
+              if (pos0.x === x && Math.abs(pos0.y - y) === 1) {
+                // Vertical line
+                const y3 = y + (y - pos0.y);
+                if (y3 >= 0 && y3 < boardSize) {
+                  const positions = [pos0, { x, y }, { x, y: y3 }];
+                  
+                  // Process shots for all three positions
+                  positions.forEach(pos => {
+                    const shotX = pos.x;
+                    const shotY = pos.y;
+                    
+                    // Skip if already shot
+                    if (opponentBoard[shotY][shotX] !== null) {
+                      return;
+                    }
+                    
+                    const hit = computerBoard[shotY][shotX] !== null &&
+                               computerBoard[shotY][shotX] !== 'hit' &&
+                               computerBoard[shotY][shotX] !== 'miss';
+                    
+                    const shipType = hit ? computerBoard[shotY][shotX] : null;
+                    
+                    results.push({
+                      position: { x: shotX, y: shotY },
+                      hit,
+                      shipType
+                    });
+                  });
+                  
+                  // Update the board with multishot results
+                  handleAbilityResult(results, 'multiShot');
+                  setMultiShotPositions([]);
+                } else {
+                  setError('Third position outside grid bounds');
+                }
+              } else if (pos0.y === y && Math.abs(pos0.x - x) === 1) {
+                // Horizontal line
+                const x3 = x + (x - pos0.x);
+                if (x3 >= 0 && x3 < boardSize) {
+                  const positions = [pos0, { x, y }, { x: x3, y }];
+                  
+                  // Process shots for all three positions
+                  positions.forEach(pos => {
+                    const shotX = pos.x;
+                    const shotY = pos.y;
+                    
+                    // Skip if already shot
+                    if (opponentBoard[shotY][shotX] !== null) {
+                      return;
+                    }
+                    
+                    const hit = computerBoard[shotY][shotX] !== null &&
+                               computerBoard[shotY][shotX] !== 'hit' &&
+                               computerBoard[shotY][shotX] !== 'miss';
+                    
+                    const shipType = hit ? computerBoard[shotY][shotX] : null;
+                    
+                    results.push({
+                      position: { x: shotX, y: shotY },
+                      hit,
+                      shipType
+                    });
+                  });
+                  
+                  // Update the board with multishot results
+                  handleAbilityResult(results, 'multiShot');
+                  setMultiShotPositions([]);
+                } else {
+                  setError('Third position outside grid bounds');
+                }
+              } else {
+                setError('Positions must be adjacent and in line');
+                setMultiShotPositions([]);
+              }
+            }
+          }
+          break;
+          
+        case 'bomb':
+          // Bomb attacks a 2x2 area
+          for (let dx = 0; dx <= 1; dx++) {
+            for (let dy = 0; dy <= 1; dy++) {
+              const bombX = x + dx;
+              const bombY = y + dy;
+              
+              // Skip if outside the board
+              if (bombX >= boardSize || bombY >= boardSize) {
+                continue;
+              }
+              
+              // Skip if already shot
+              if (opponentBoard[bombY][bombX] !== null) {
+                continue;
+              }
+              
+              const hit = computerBoard[bombY][bombX] !== null &&
+                         computerBoard[bombY][bombX] !== 'hit' &&
+                         computerBoard[bombY][bombX] !== 'miss';
+              
+              const shipType = hit ? computerBoard[bombY][bombX] : null;
+              
+              results.push({
+                position: { x: bombX, y: bombY },
+                hit,
+                shipType
+              });
+            }
+          }
+          
+          // Update the board with bomb results
+          handleAbilityResult(results, 'bomb');
+          break;
+          
+        default:
+          setError(`Ability ${selectedAbility} not implemented`);
+      }
     }
     
     addDebug(`Using ability ${selectedAbility} at (${x}, ${y})`);
@@ -833,14 +1473,20 @@ function Battleship({ theme = 'black', isExpanded = false }) {
 
   // Function to play again
   const playAgain = () => {
-    sendMessage({ 
-      type: 'play_again'
-    });
-    
-    addDebug('Requesting to play again');
+    if (gameMode === 'online') {
+      // Online mode - send play again request to server
+      sendMessage({ 
+        type: 'play_again'
+      });
+      
+      addDebug('Requesting to play again');
+    } else {
+      // Offline mode - reset the game and start again
+      startOfflineGame();
+    }
   };
 
-  // Function to force reconnection
+  // Function to force reconnection (online mode)
   const forceReconnect = () => {
     addDebug('Forcing reconnection...');
     
@@ -853,11 +1499,11 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     createWebSocketConnection();
   };
 
-  // Render a board cell with ASCII instead of background colors
+  // Render a board cell with ASCII instead of background colors - optimize cell size
   const renderCell = (board, x, y, isOpponent = false) => {
     const cellState = board[y][x];
     
-    let cellClass = `w-7 h-7 border ${colors.border} flex items-center justify-center text-xs transition-all duration-200 `;
+    let cellClass = `w-6 h-6 border ${colors.border} flex items-center justify-center text-xs transition-all duration-200 `;
     let cellContent = '';
     
     // Base cell style - always has theme background
@@ -866,14 +1512,14 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     if (isOpponent) {
       if (cellState === 'hit') {
         cellContent = '✗'; // X mark for hit
-        // Ajuste para que no tema escuro o X seja colorido em vez de usar a cor padrão de texto
+        // Adjustment for dark theme where X is colored instead of using default text color
         cellClass += theme === 'black' ? 'text-red-400' : `${colors.text}`;
       } else if (cellState === 'miss') {
         cellContent = '•'; // Dot for miss
         cellClass += `${colors.secondaryText}`;
       } else if (cellState === 'scan-ship') {
-        // No tema escuro, use um caractere mais visível ou destaque diferente
-        cellContent = theme === 'black' ? '■' : '░'; // Caractere mais sólido para tema escuro
+        // In dark theme, use a more visible character or different highlight
+        cellContent = theme === 'black' ? '■' : '░'; // More solid character for dark theme
         cellClass += `${colors.accent}`;
       } else if (cellState === 'scan-empty') {
         cellContent = '·'; // Small dot for scanned empty
@@ -893,13 +1539,13 @@ function Battleship({ theme = 'black', isExpanded = false }) {
       if (selectedAbility === 'multiShot' && 
           multiShotPositions.some(pos => pos.x === x && pos.y === y)) {
         cellClass += ` ring-1 ${colors.highlight}`;
-        // Ajuste para tema escuro - use caractere mais visível
+        // Adjustment for dark theme - use more visible character
         cellContent = theme === 'black' ? '◎' : '+'; // Target marker
       }
     } else {
       if (cellState === 'hit') {
         cellContent = '✗'; // X mark for hit
-        // Ajuste para que no tema escuro o X seja vermelho
+        // Adjustment for dark theme where X is red
         cellClass += theme === 'black' ? 'text-red-400' : 'text-red-500';
       } else if (cellState === 'miss') {
         cellContent = '•'; // Dot for miss
@@ -914,7 +1560,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           case 'carrier': cellContent = '▦'; break;
           default: cellContent = '█';
         }
-        // Ajuste de cores para tema escuro - use cores mais suaves
+        // Adjustment of colors for dark theme - use softer colors
         cellClass += theme === 'black' ? 'text-gray-300' : `${colors.text}`;
       } else {
         cellContent = '·'; // Small dot for empty
@@ -945,7 +1591,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         }
         
         if (isPartOfShip) {
-          // Ajuste para tema escuro - use um caractere mais visível
+          // Adjustment for dark theme - use a more visible character
           cellContent = theme === 'black' ? '■' : '#'; // Marker for ship being placed
           cellClass += ` ${colors.accent} animate-pulse`;
         }
@@ -963,7 +1609,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     return (
       <div 
         key={`${x}-${y}`}
-        className={`${cellClass} font-mono`}
+        className={`${cellClass} font-mono cursor-pointer`}
         onClick={handleClick}
       >
         {cellContent}
@@ -971,7 +1617,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // Render the board
+  // Render the board - more compact
   const renderBoard = (board, isOpponent = false) => {
     // Determine number of columns based on board size
     const colsClass = {
@@ -986,9 +1632,9 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     return (
       <div className={`p-1 ${colors.primaryBg} rounded-sm inline-block border ${colors.border}`}>
         {/* Add column headers (A-J) */}
-        <div className={`grid ${colsClass} gap-1 mb-1`}>
+        <div className={`grid ${colsClass} gap-0.5 mb-0.5`}>
           {Array.from({length: boardSize}).map((_, i) => (
-            <div key={`col-${i}`} className="flex items-center justify-center h-5 text-xs font-mono text-gray-500">
+            <div key={`col-${i}`} className="flex items-center justify-center h-4 text-xs font-mono text-gray-500">
               {String.fromCharCode(65 + i)}
             </div>
           ))}
@@ -997,16 +1643,16 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         {/* Board with row numbers */}
         <div className="flex">
           {/* Row numbers (1-10) */}
-          <div className="flex flex-col mr-1">
+          <div className="flex flex-col mr-0.5">
             {Array.from({length: boardSize}).map((_, i) => (
-              <div key={`row-${i}`} className="flex items-center justify-center w-5 h-7 text-xs font-mono text-gray-500">
+              <div key={`row-${i}`} className="flex items-center justify-center w-4 h-6 text-xs font-mono text-gray-500">
                 {i + 1}
               </div>
             ))}
           </div>
           
           {/* The actual board grid */}
-          <div className={`grid ${colsClass} gap-1`}>
+          <div className={`grid ${colsClass} gap-0.5`}>
             {board.map((row, y) => 
               row.map((_, x) => renderCell(board, x, y, isOpponent))
             )}
@@ -1016,15 +1662,15 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // Render ship selection interface in terminal style
+  // Render ship selection interface in terminal style - more compact
   const renderShipSelection = () => {
     return (
-      <div className={`mt-3 ${colors.bg} p-2 rounded-sm ${colors.border} border font-mono`}>
-        <div className="text-xs mb-2 flex items-center">
-          <span className={`${colors.accent} mr-2`}>&#9654;</span>
+      <div className={`mt-2 ${colors.bg} p-2 rounded-sm ${colors.border} border font-mono`}>
+        <div className="text-xs mb-1 flex items-center">
+          <span className={`${colors.accent} mr-1`}>&#9654;</span>
           <span className={colors.text}>SELECT VESSEL FOR DEPLOYMENT:</span>
         </div>
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-1 mb-1">
           {Object.entries(shipsToPlace).map(([type, info]) => {
             const placedCount = yourShips[type] ? yourShips[type].length : 0;
             const disabled = placedCount >= info.count;
@@ -1033,7 +1679,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
               <button
                 key={type}
                 onClick={() => !disabled && selectShipType(type, info.size, info.count)}
-                className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${
+                className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${
                   disabled 
                     ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                     : selectedShip?.type === type
@@ -1051,7 +1697,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         <div className="flex justify-between">
           <button 
             onClick={rotateShip}
-            className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.text}`}
+            className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.text}`}
             disabled={!selectedShip}
           >
             {shipOrientation === 'horizontal' ? '[HORIZONTAL]' : '[VERTICAL]'}
@@ -1060,7 +1706,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           {selectedShip && selectedShip.x !== undefined && (
             <button 
               onClick={placeShip}
-              className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.accent}`}
+              className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.accent}`}
             >
               CONFIRM
             </button>
@@ -1068,7 +1714,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           
           <button 
             onClick={confirmShipPlacement}
-            className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${
+            className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${
               Object.keys(yourShips).length === 0 
                 ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                 : `${colors.border} ${colors.accent}`
@@ -1082,22 +1728,22 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // Render special abilities in terminal style
+  // Render special abilities in terminal style - more compact
   const renderAbilities = () => {
     if (!Object.keys(abilities).length) return null;
     
     return (
-      <div className={`mt-2 ${colors.bg} p-2 rounded-sm border ${colors.border} font-mono`}>
-        <div className="text-xs mb-2 flex items-center">
-          <span className={`${colors.accent} mr-2`}>&#9654;</span>
+      <div className={`mt-1 ${colors.bg} p-2 rounded-sm border ${colors.border} font-mono`}>
+        <div className="text-xs mb-1 flex items-center">
+          <span className={`${colors.accent} mr-1`}>&#9654;</span>
           <span className={colors.text}>SPECIAL ABILITIES:</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {Object.entries(abilities).map(([type, count]) => (
             <button
               key={type}
               onClick={() => count > 0 && selectAbility(type)}
-              className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${
+              className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${
                 count <= 0 
                   ? 'border-gray-500 text-gray-500 cursor-not-allowed'
                   : selectedAbility === type
@@ -1114,7 +1760,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           {selectedAbility && (
             <button 
               onClick={() => setSelectedAbility(null)}
-              className={`px-2 py-1 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.text}`}
+              className={`px-2 py-0.5 text-xs rounded-sm transition-all font-mono border ${colors.border} ${colors.text}`}
             >
               CANCEL
             </button>
@@ -1122,8 +1768,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
         </div>
         
         {selectedAbility === 'multiShot' && multiShotPositions.length > 0 && (
-          <div className="text-xs mt-2 font-mono">
-            <span className={`${colors.accent} mr-2`}>&gt;</span>
+          <div className="text-xs mt-1 font-mono">
+            <span className={`${colors.accent} mr-1`}>&gt;</span>
             <span className={colors.text}>SELECT {3 - multiShotPositions.length} MORE POSITION(S) IN LINE</span>
           </div>
         )}
@@ -1131,12 +1777,12 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // New component for the initial "Want to play a game?" screen
+  // Render the initial "Want to play a game?" screen
   const renderInitialScreen = () => {
     return (
       <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full flex flex-col items-center justify-center text-center w-full ${colors.scanlines}`}>
         <div className={`text-xl md:text-2xl font-bold mb-6 font-mono ${colors.accent}`}>
-          NAVAL COMBAT SYSTEM v2.3.4
+          NAVAL COMBAT SYSTEM
         </div>
         
         <pre className={`${colors.text} mb-6 font-mono text-xs md:text-sm`}>
@@ -1157,8 +1803,69 @@ function Battleship({ theme = 'black', isExpanded = false }) {
                     bg-transparent`}
         >
           <Terminal size={18} />
-          <span>SHALL WE PLAY A GAME?</span>
+          <span>CONECT TO SERVER</span>
         </button>
+      </div>
+    );
+  };
+
+  // Render game mode selection screen
+  const renderModeSelection = () => {
+    return (
+      <div className={`${colors.bg} flex flex-col items-center justify-center py-8 px-4`}>
+        <h2 className={`text-xl md:text-2xl font-bold mb-6 ${colors.text}`}>
+          NAVAL COMBAT SYSTEM 
+        </h2>
+        
+        <div className={`w-full max-w-md p-6 rounded-lg ${colors.primaryBg} ${colors.border} border mb-8`}>
+          <div className={`mb-6 ${colors.text} text-center`}>
+            <p className="mb-2 text-sm opacity-80 uppercase tracking-wider">SELECT GAME MODE</p>
+            <div className={`h-px w-3/4 mx-auto mb-6 ${colors.border}`}></div>
+          </div>
+          
+          <div className="flex flex-col space-y-4 mb-6">
+            <button
+              onClick={() => selectGameMode('computer')}
+              className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
+            >
+              <div className="flex items-center">
+                <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className={`font-bold ${colors.text}`}>Play against computer</p>
+                  <p className={`text-xs ${colors.secondaryText}`}>Challenge the AI in a local naval battle</p>
+                </div>
+              </div>
+              <span className={`${colors.accent}`}>→</span>
+            </button>
+            
+            <button
+              onClick={() => selectGameMode('online')}
+              className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
+            >
+              <div className="flex items-center">
+                <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className={`font-bold ${colors.text}`}>Play online</p>
+                  <p className={`text-xs ${colors.secondaryText}`}>Find real opponents to challenge</p>
+                </div>
+              </div>
+              <span className={`${colors.accent}`}>→</span>
+            </button>
+          </div>
+          
+          <div className={`text-xs text-center ${colors.secondaryText} mt-6`}>
+            <p>Version 2.3.4 - Updated System</p>
+            <p className="mt-1">Secure WebSocket Connections</p>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1167,11 +1874,11 @@ function Battleship({ theme = 'black', isExpanded = false }) {
   const renderLobby = () => {
     return (
       <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
-        {/* Cabeçalho com indicação do modo de jogo */}
+        {/* Header with game mode indication */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-1">
             <Database size={16} className={colors.accent} />
-            <h3 className={`text-sm font-bold ${colors.accent}`}>SERVIDORES DISPONÍVEIS</h3>
+            <h3 className={`text-sm font-bold ${colors.accent}`}>AVAILABLE SERVERS</h3>
           </div>
           <div className={`text-xs py-1 px-2 border ${colors.border} ${colors.secondaryText}`}>
             {gameMode === 'online' ? 'MULTIPLAYER' : 'SINGLE PLAYER'}
@@ -1184,14 +1891,14 @@ function Battleship({ theme = 'black', isExpanded = false }) {
             type="text"
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
-            placeholder={gameMode === 'online' ? "NOME DA SALA MULTIPLAYER" : "NOME DA SIMULAÇÃO"}
+            placeholder={gameMode === 'online' ? "MULTIPLAYER ROOM NAME" : "SIMULATION NAME"}
             className={`text-xs px-2 py-1 flex-grow bg-transparent border-b ${colors.border} focus:outline-none ${colors.text} font-mono uppercase`}
           />
           <button 
             onClick={createRoom}
             className={`px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
           >
-            CRIAR
+            CREATE
           </button>
         </div>
         
@@ -1199,8 +1906,8 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           {rooms.length === 0 ? (
             <div className={`text-xs border ${colors.border} p-2 rounded-sm text-center ${colors.text}`}>
               {gameMode === 'online' 
-                ? "NENHUMA SALA MULTIPLAYER DISPONÍVEL - CRIE UMA NOVA" 
-                : "NENHUMA SIMULAÇÃO DISPONÍVEL - INICIE UMA NOVA"}
+                ? "NO MULTIPLAYER ROOMS AVAILABLE - CREATE A NEW ONE" 
+                : "NO SIMULATIONS AVAILABLE - START A NEW ONE"}
             </div>
           ) : (
             rooms.map(room => (
@@ -1213,10 +1920,10 @@ function Battleship({ theme = 'black', isExpanded = false }) {
                     <div className="font-bold">{room.name}</div>
                     <div className="text-xs flex items-center gap-1">
                       <Server size={12} />
-                      <span>CONEXÕES: {room.playerCount}/2</span>
-                      {/* Indicador opcional de tipo de sala para o modo online */}
+                      <span>CONNECTIONS: {room.playerCount}/2</span>
+                      {/* Optional room type indicator for online mode */}
                       {gameMode === 'online' && room.isRanked && (
-                        <span className={`ml-2 px-1 text-[10px] ${colors.accent} border ${colors.border}`}>RANQUEADA</span>
+                        <span className={`ml-2 px-1 text-[10px] ${colors.accent} border ${colors.border}`}>RANKED</span>
                       )}
                     </div>
                   </div>
@@ -1225,7 +1932,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
                     disabled={room.isFull}
                     className={`px-3 py-1 text-xs border ${room.isFull ? 'border-gray-500 text-gray-500 cursor-not-allowed' : `${colors.border} ${colors.text}`}`}
                   >
-                    {room.isFull ? 'CHEIA' : 'ENTRAR'}
+                    {room.isFull ? 'FULL' : 'JOIN'}
                   </button>
                 </div>
               </div>
@@ -1238,7 +1945,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           className={`flex items-center justify-center gap-2 w-full px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
         >
           <RefreshCw size={12} />
-          <span>ATUALIZAR LISTA DE {gameMode === 'online' ? 'SALAS' : 'SIMULAÇÕES'}</span>
+          <span>REFRESH {gameMode === 'online' ? 'ROOM' : 'SIMULATION'} LIST</span>
         </button>
       </div>
     );
@@ -1277,27 +1984,20 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // Render setup phase
+  // Render setup phase - more compact
   const renderSetup = () => {
     return (
-      <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full w-full font-mono`}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-xs font-bold ${colors.accent}`}>SERVER: {roomName}</h3>
-          <div className="text-xs border px-2 py-1 border-green-500 text-green-500">DEPLOYMENT PHASE</div>
+      <div className={`${colors.bg} p-2 rounded-sm border ${colors.border} ${colors.text} h-full w-full font-mono`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`text-xs font-bold ${colors.accent}`}>
+            {gameMode === 'online' ? `SERVER: ${roomName}` : 'OFFLINE MODE: DEPLOYMENT PHASE'}
+          </h3>
+          <div className="text-xs border px-2 py-0.5 border-green-500 text-green-500">DEPLOYMENT PHASE</div>
         </div>
         
         <div className="flex flex-col items-center">
           {renderBoard(yourBoard, false)}
           {renderShipSelection()}
-        </div>
-        
-        <div className="flex justify-center mt-4">
-          <button 
-            onClick={leaveRoom}
-            className={`px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
-          >
-            ABORT MISSION
-          </button>
         </div>
       </div>
     );
@@ -1306,17 +2006,19 @@ function Battleship({ theme = 'black', isExpanded = false }) {
   // Render ongoing game
   const renderPlaying = () => {
     return (
-      <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`text-xs font-bold ${colors.accent}`}>SERVER: {roomName}</h3>
-          <div className={`text-xs py-1 px-3 border ${yourTurn ? 'border-green-500 text-green-500' : 'border-yellow-500 text-yellow-500'}`}>
+      <div className={`${colors.bg} p-2 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`text-xs font-bold ${colors.accent}`}>
+            {gameMode === 'online' ? `SERVER: ${roomName}` : 'BATTLE IN PROGRESS'}
+          </h3>
+          <div className={`text-xs py-0.5 px-2 border ${yourTurn ? 'border-green-500 text-green-500' : 'border-yellow-500 text-yellow-500'}`}>
             {yourTurn ? 'AWAITING COMMAND' : 'ENEMY ACTION IN PROGRESS'}
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <div>
-            <div className="text-xs mb-2 text-center flex items-center justify-center gap-1">
+            <div className="text-xs mb-1 text-center flex items-center justify-center gap-1">
               <span>FRIENDLY GRID</span>
               <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
             </div>
@@ -1325,7 +2027,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
             </div>
           </div>
           <div>
-            <div className="text-xs mb-2 text-center flex items-center justify-center gap-1">
+            <div className="text-xs mb-1 text-center flex items-center justify-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full bg-red-500"></span>
               <span>ENEMY GRID</span>
             </div>
@@ -1334,38 +2036,30 @@ function Battleship({ theme = 'black', isExpanded = false }) {
             </div>
           </div>
         </div>
-        
-        {lastShotResult && (
-          <div className={`text-xs mt-2 p-1 text-center ${colors.success}`}>
-            {lastShotResult.hit 
-              ? `TARGET HIT: ${lastShotResult.shipType.toUpperCase()}` + (lastShotResult.sunk ? ' - VESSEL DESTROYED' : ' - DAMAGE CONFIRMED') 
-              : 'MISS REPORTED - NO DAMAGE'}
-          </div>
-        )}
-        
         {renderAbilities()}
-        
-        <div className="flex justify-center mt-3">
-          <button 
-            onClick={leaveRoom}
-            className={`px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
-          >
-            ABORT MISSION
-          </button>
-        </div>
       </div>
     );
   };
 
-  // Render game over
+  // Render game over screen - more compact
   const renderGameOver = () => {
     return (
-      <div className={`${colors.bg} p-4 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
-        <h3 className={`text-sm font-bold mb-3 text-center ${colors.accent}`}>MISSION COMPLETE</h3>
+      <div className={`${colors.bg} p-2 rounded-sm border ${colors.border} ${colors.text} h-full overflow-y-auto w-full font-mono`}>
+        <h3 className={`text-sm font-bold mb-2 text-center ${colors.accent}`}>MISSION COMPLETE</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className={`p-1 ${
+          gameWinner === 'player' 
+            ? 'border-green-500 border bg-green-500 bg-opacity-10' 
+            : 'border-red-500 border bg-red-500 bg-opacity-10'
+        } text-center mb-2`}>
+          <span className={`text-base font-bold ${gameWinner === 'player' ? 'text-green-400' : 'text-red-400'}`}>
+            {gameWinner === 'player' ? 'VICTORY' : 'DEFEAT'} - {gameWinner === 'player' ? 'ALL ENEMY VESSELS DESTROYED' : 'FLEET DESTROYED'}
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
           <div>
-            <div className="text-xs mb-2 text-center flex items-center justify-center gap-1">
+            <div className="text-xs mb-1 text-center flex items-center justify-center gap-1">
               <span>FRIENDLY GRID</span>
               <span className="inline-block h-2 w-2 rounded-full bg-green-500"></span>
             </div>
@@ -1374,7 +2068,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
             </div>
           </div>
           <div>
-            <div className="text-xs mb-2 text-center flex items-center justify-center gap-1">
+            <div className="text-xs mb-1 text-center flex items-center justify-center gap-1">
               <span className="inline-block h-2 w-2 rounded-full bg-red-500"></span>
               <span>ENEMY GRID</span>
             </div>
@@ -1384,16 +2078,16 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-3 justify-center">
+        <div className="flex flex-wrap gap-2 justify-center">
           <button 
             onClick={playAgain}
-            className={`px-3 py-1 text-xs border-2 ${colors.border} ${colors.accent} hover:bg-opacity-20 hover:bg-gray-500`}
+            className={`px-3 py-0.5 text-xs border-2 ${colors.border} ${colors.accent} hover:bg-opacity-20 hover:bg-gray-500`}
           >
             NEW MISSION
           </button>
           <button 
             onClick={leaveRoom}
-            className={`px-3 py-1 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
+            className={`px-3 py-0.5 text-xs border ${colors.border} hover:bg-opacity-20 hover:bg-gray-500 ${colors.text}`}
           >
             RETURN TO HQ
           </button>
@@ -1429,7 +2123,7 @@ function Battleship({ theme = 'black', isExpanded = false }) {
           </div>
         )}
         
-        {!connected && !disconnected && gameState !== 'initial' && (
+        {!connected && !disconnected && gameState !== 'initial' && gameMode === 'online' && (
           <div className={`p-2 text-xs rounded-sm border ${colors.border} ${colors.text} text-center font-mono animate-pulse`}>
             {waitingMessage}
           </div>
@@ -1438,104 +2132,142 @@ function Battleship({ theme = 'black', isExpanded = false }) {
     );
   };
 
-  // Main render - display appropriate game state
-  return (
-    <div className={`${colors.bg} min-h-screen flex flex-col items-center justify-center p-4`}>
-      <div className="w-full max-w-4xl">
-        {/* Mensagens de erro/conexão */}
-        {renderMessages()}
-        
-        {/* Seleção de Modo de Jogo */}
-        {modeSelectionVisible && (
-          <div className={`${colors.bg} flex flex-col items-center justify-center py-8 px-4`}>
-            <h2 className={`text-xl md:text-2xl font-bold mb-6 ${colors.text}`}>
-              NAVAL COMBAT SYSTEM v2.3.4
-            </h2>
-            
-            <div className={`w-full max-w-md p-6 rounded-lg ${colors.primaryBg} ${colors.border} border mb-8`}>
-              <div className={`mb-6 ${colors.text} text-center`}>
-                <p className="mb-2 text-sm opacity-80 uppercase tracking-wider">SELECIONE O MODO DE JOGO</p>
-                <div className={`h-px w-3/4 mx-auto mb-6 ${colors.border}`}></div>
+  // Function to render game log/message panel
+  const renderGameLog = () => {
+    // Get last 8 messages to display
+    const recentMessages = debug.slice(-8);
+    
+    return (
+      <div className={`${colors.primaryBg} border ${colors.border} rounded-sm p-2 h-28 overflow-y-auto text-xs font-mono mb-2`}>
+        <div className="flex items-center justify-between mb-1">
+          <span className={`${colors.accent} font-bold`}>BATTLE LOG</span>
+          <span className={`${colors.secondaryText} text-xs`}>{new Date().toLocaleTimeString()}</span>
+        </div>
+        <div className="h-px w-full bg-gray-700 mb-2"></div>
+        {recentMessages.length === 0 ? (
+          <div className={`${colors.secondaryText} italic`}>No activity yet...</div>
+        ) : (
+          <div className="space-y-1">
+            {recentMessages.map((msg, index) => (
+              <div key={index} className="flex">
+                <span className={`${colors.accent} mr-1`}>&gt;</span>
+                <span className={colors.text}>{msg.split(': ')[1] || msg}</span>
               </div>
-              
-              <div className="flex flex-col space-y-4 mb-6">
-                <button
-                  onClick={() => selectGameMode('computer')}
-                  className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
-                >
-                  <div className="flex items-center">
-                    <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <p className={`font-bold ${colors.text}`}>Jogar contra computador</p>
-                      <p className={`text-xs ${colors.secondaryText}`}>Desafie a IA em uma batalha naval local</p>
-                    </div>
-                  </div>
-                  <span className={`${colors.accent}`}>→</span>
-                </button>
-                
-                <button
-                  onClick={() => selectGameMode('online')}
-                  className={`flex items-center justify-between px-4 py-3 rounded ${colors.secondaryBg} hover:opacity-90 transition-opacity duration-200 ${colors.border} border`}
-                >
-                  <div className="flex items-center">
-                    <div className={`mr-3 p-2 rounded-full ${colors.secondaryBg} ${colors.border} border`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${colors.text}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <p className={`font-bold ${colors.text}`}>Jogar online</p>
-                      <p className={`text-xs ${colors.secondaryText}`}>Encontre oponentes reais para desafiar</p>
-                    </div>
-                  </div>
-                  <span className={`${colors.accent}`}>→</span>
-                </button>
-              </div>
-              
-              <div className={`text-xs text-center ${colors.secondaryText} mt-6`}>
-                <p>Versão 2.3.4 - Sistema Atualizado</p>
-                <p className="mt-1">Conexões seguras via WebSockets</p>
-              </div>
-            </div>
+            ))}
           </div>
         )}
+      </div>
+    );
+  };
+
+  // Function to render shot history
+  const renderShotHistory = () => {
+    // Get last 5 shots for display
+    const recentShots = shots.slice(-5).reverse();
+    const computerRecentShots = computerShots.slice(-5).reverse();
+    
+    return (
+      <div className={`${colors.primaryBg} border ${colors.border} rounded-sm p-2 text-xs font-mono mb-2`}>
+        <div className="flex justify-between">
+          <div className="w-1/2 pr-2">
+            <div className={`${colors.accent} font-bold mb-1`}>YOUR SHOTS</div>
+            <div className="h-px w-full bg-gray-700 mb-2"></div>
+            {recentShots.length === 0 ? (
+              <div className={`${colors.secondaryText} italic`}>No shots fired</div>
+            ) : (
+              <div className="space-y-1">
+                {recentShots.map((shot, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>
+                      {String.fromCharCode(65 + shot.x)}{shot.y + 1}:
+                    </span>
+                    <span className={shot.hit ? 'text-green-500' : 'text-red-500'}>
+                      {shot.hit ? 'HIT' + (shot.sunk ? ' SUNK!' : '') : 'MISS'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {gameMode === 'computer' && (
+            <div className="w-1/2 pl-2 border-l border-gray-700">
+              <div className={`${colors.accent} font-bold mb-1`}>ENEMY SHOTS</div>
+              <div className="h-px w-full bg-gray-700 mb-2"></div>
+              {computerRecentShots.length === 0 ? (
+                <div className={`${colors.secondaryText} italic`}>No shots received</div>
+              ) : (
+                <div className="space-y-1">
+                  {computerRecentShots.map((shot, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span>
+                        {String.fromCharCode(65 + shot.x)}{shot.y + 1}:
+                      </span>
+                      <span className={shot.hit ? 'text-red-500' : 'text-green-500'}>
+                        {shot.hit ? 'HIT' + (shot.sunk ? ' SUNK!' : '') : 'MISS'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Main render - display appropriate game state
+  return (
+    <div className={`${colors.bg} h-full flex flex-col pt-2 px-4 pb-4`}>
+      <div className="w-full max-w-4xl mx-auto flex flex-col h-full">
+        {/* Error/connection messages */}
+        {renderMessages()}
         
-        {/* Estados do jogo - apenas visíveis quando um modo está selecionado */}
+        {/* Game Mode Selection */}
+        {modeSelectionVisible && renderModeSelection()}
+        
+        {/* Game states - only visible when a mode is selected */}
         {!modeSelectionVisible && (
-          <>
-            {/* Botão para voltar à seleção de modo */}
-            <div className="absolute top-4 left-4 z-30">
+          <div className="flex flex-col h-full">
+            {/* Top Bar with navigation and mode indicator */}
+            <div className="flex justify-between items-center mb-1 h-8">
               <button 
                 onClick={backToModeSelection}
-                className={`px-3 py-1 text-xs rounded ${colors.secondaryBg} ${colors.text} border ${colors.border} hover:opacity-80 transition-opacity duration-200 flex items-center`}
+                className={`px-2 py-0.5 text-xs rounded ${colors.secondaryBg} ${colors.text} border ${colors.border} hover:opacity-80 transition-opacity duration-200 flex items-center`}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                Voltar
+                Back
               </button>
-            </div>
-            
-            {/* Indicador de modo de jogo */}
-            <div className="absolute top-4 right-4 z-30">
-              <div className={`px-3 py-1 text-xs rounded ${colors.primaryBg} ${colors.text} border ${colors.border} flex items-center`}>
-                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${gameMode === 'online' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-                {gameMode === 'online' ? 'Modo Online' : 'Modo Computador'}
+              
+              <div className={`px-2 py-0.5 text-xs rounded ${colors.primaryBg} ${colors.text} border ${colors.border} flex items-center`}>
+                <span className={`inline-block w-2 h-2 rounded-full mr-1 ${gameMode === 'online' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                {gameMode === 'online' ? 'Online Mode' : 'Computer Mode'}
               </div>
             </div>
             
-            {/* Telas do jogo existentes */}
-            {gameState === 'initial' && renderInitialScreen()}
-            {gameState === 'lobby' && renderLobby()}
-            {gameState === 'waiting' && renderWaiting()}
-            {gameState === 'setup' && renderSetup()}
-            {gameState === 'playing' && renderPlaying()}
-            {gameState === 'gameover' && renderGameOver()}
-          </>
+            {/* Main Game Content */}
+            <div className="flex-1 overflow-auto">
+              {gameState === 'initial' && renderInitialScreen()}
+              {gameState === 'lobby' && renderLobby()}
+              {gameState === 'waiting' && renderWaiting()}
+              {gameState === 'setup' && renderSetup()}
+              {gameState === 'playing' && renderPlaying()}
+              {gameState === 'gameover' && renderGameOver()}
+            </div>
+            
+            {/* Game Logs and Shot History (only in playing/gameover states) */}
+            {(gameState === 'playing' || gameState === 'gameover') && (
+              <div className="mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  
+                  <div>{renderShotHistory()}</div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
